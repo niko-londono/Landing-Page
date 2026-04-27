@@ -3,24 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Portafolio personal con mis proyectos y experiencia." />
-    <title>Mi Portafolio Personal</title>
-    <!-- Google Fonts -->
+    <meta name="description" content="Portafolio de Nicolás Londoño - Ciencias de la Computación" />
+    <title>Nicolás Londoño | Ciencias de la Computación</title>
+    <!-- Google Fonts: Inter para texto, JetBrains Mono para toques de código -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   </head>
   <body>
     <div id="app">
       <header class="header">
         <div class="container">
           <nav class="navbar">
-            <a href="#" class="logo">Mi Portafolio</a>
+            <a href="#" class="logo">&lt;Niko /&gt;</a>
             <ul class="nav-links">
-              <li><a href="#inicio">Inicio</a></li>
-              <li><a href="#sobre-mi">Sobre mí</a></li>
-              <li><a href="#proyectos">Proyectos</a></li>
-              <li><a href="#contacto" class="btn btn-outline">Contacto</a></li>
+              <li><a href="#inicio">_inicio</a></li>
+              <li><a href="#sobre-mi">_sobre_mí</a></li>
+              <li><a href="#proyectos">_proyectos</a></li>
+              <li><a href="#contacto" class="btn btn-outline">.contactar()</a></li>
             </ul>
           </nav>
         </div>
@@ -31,26 +31,33 @@
         <section id="inicio" class="hero">
           <div class="container hero-content">
             <div class="hero-text">
-              <span class="badge">¡Hola! Bienvenido a mi espacio</span>
-              <h1 class="hero-title">Hola, soy <br><strong>Tu Nombre</strong> <br> <span class="highlight">Desarrollador & Creador</span></h1>
+              <span class="badge">&gt;_ console.log("¡Hola, mundo!");</span>
+              <h1 class="hero-title">Soy <br><strong>Nicolás Londoño</strong> <br> <span class="highlight">Ciencias de la Computación</span></h1>
               <p class="hero-description">
-                Aquí podrás descubrir más sobre mis habilidades, los proyectos en los que he trabajado y cómo puedo ayudarte a dar vida a tus ideas con soluciones creativas y funcionales.
+                Apasionado por la tecnología, el desarrollo de software y la resolución de problemas complejos. Transformo la lógica en soluciones creativas y funcionales.
               </p>
               <div class="hero-actions">
                 <a href="#proyectos" class="btn btn-primary">Ver mis proyectos</a>
-                <a href="#contacto" class="btn btn-secondary">Hablemos</a>
+                <a href="/fotos/Nicolas%20Londo%C3%B1o%20Hernandez%20CV.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Descargar CV</a>
+              </div>
+              <div class="social-links" style="margin-top: 1.5rem;">
+                <a href="https://www.linkedin.com/in/nicolas-londoño-317336199/" target="_blank" class="link-arrow" style="font-family: var(--font-code); font-size: 0.9rem;">-> LinkedIn</a>
               </div>
             </div>
             <div class="hero-image-wrapper">
               <!-- Decorative background shape -->
               <div class="shape-bg"></div>
-              <!-- Placeholder for profile picture -->
+              <!-- Profile picture -->
               <div class="profile-container">
-                <img src="https://via.placeholder.com/400x500/AEC6CF/ffffff?text=Tu+Foto" alt="Tu foto de perfil" class="profile-img" />
+                <img src="/fotos/foto_niko.JPG" alt="Nicolás Londoño" class="profile-img" />
               </div>
               <!-- Floating decorative shapes -->
-              <div class="shape floating-shape-1"></div>
-              <div class="shape floating-shape-2"></div>
+              <div class="shape floating-shape-1">
+                <span class="code-symbol">{ }</span>
+              </div>
+              <div class="shape floating-shape-2">
+                <span class="code-symbol">&lt;/&gt;</span>
+              </div>
             </div>
           </div>
         </section>
@@ -60,31 +67,47 @@
           <div class="container">
             <div class="section-header">
               <h2 class="section-title">Sobre <span>mí</span></h2>
-              <p class="section-subtitle">Conoce un poco más de mi trayectoria.</p>
+              <p class="section-subtitle">Conoce un poco más sobre mi trayectoria.</p>
             </div>
             <div class="about-content">
               <div class="about-text">
                 <p>
-                  Soy un profesional apasionado por la tecnología y el diseño. Me encanta construir aplicaciones web intuitivas y crear experiencias de usuario memorables prestando atención a los pequeños detalles.
+                  Estudiante de <strong>Ciencias de la Computación</strong> con un gran interés en el desarrollo de software, la algoritmia y la arquitectura de sistemas. Me encanta entender cómo funcionan las cosas por debajo y construir aplicaciones eficientes e intuitivas.
                 </p>
                 <p>
-                  Cuando no estoy creando o programando, disfruto investigar sobre nuevas tendencias, aprender y buscar nuevas fuentes de inspiración para mis próximos proyectos.
+                  A lo largo de mi carrera, he desarrollado habilidades en diversas tecnologías, siempre buscando aprender las mejores prácticas, optimizar el rendimiento y escribir código limpio y mantenible.
                 </p>
               </div>
               <div class="skills-container">
-                <span class="skill-tag">HTML5</span>
-                <span class="skill-tag">CSS3</span>
-                <span class="skill-tag">JavaScript</span>
-                <span class="skill-tag">React</span>
-                <span class="skill-tag">Diseño UI/UX</span>
+                <!-- Habilidades clave -->
+                <span class="skill-tag">JavaScript / TypeScript</span>
+                <span class="skill-tag">React.js</span>
+                <span class="skill-tag">Python</span>
+                <span class="skill-tag">Java / C++</span>
+                <span class="skill-tag">Estructuras de Datos</span>
+                <span class="skill-tag">Algoritmos</span>
                 <span class="skill-tag">Git & GitHub</span>
+                <span class="skill-tag">Bases de Datos</span>
               </div>
             </div>
           </div>
         </section>
 
+        <!-- Aptitudes / Certifications Section -->
+        <section id="aptitudes" class="projects">
+           <div class="container">
+             <div class="section-header">
+               <h2 class="section-title">Mis <span>Aptitudes</span></h2>
+               <p class="section-subtitle">Habilidades destacadas y certificaciones.</p>
+             </div>
+             <div style="display: flex; justify-content: center;">
+                <img src="/fotos/Captura%20de%20pantalla%20APTITUDES.png" alt="Aptitudes" style="max-width: 100%; border-radius: var(--border-radius); box-shadow: var(--shadow-md);" />
+             </div>
+           </div>
+        </section>
+
         <!-- Projects Section Placeholder -->
-        <section id="proyectos" class="projects">
+        <section id="proyectos" class="projects" style="background-color: var(--bg-surface);">
           <div class="container">
             <div class="section-header">
               <h2 class="section-title">Mis <span>Proyectos</span></h2>
@@ -95,36 +118,29 @@
               <!-- Project Card 1 -->
               <div class="project-card">
                 <div class="project-image">
-                  <img src="https://via.placeholder.com/600x400/E5E0FF/333333?text=Proyecto+1" alt="Proyecto 1">
+                  <div class="code-window">
+                    <div class="window-header">
+                       <span class="dot red"></span>
+                       <span class="dot yellow"></span>
+                       <span class="dot green"></span>
+                    </div>
+                    <div class="window-body">
+                       <code>
+                         <span style="color:#b58900;">function</span> <span style="color:#268bd2;">buildApp</span>() {<br>
+                         &nbsp;&nbsp;<span style="color:#cb4b16;">return</span> "Solución";<br>
+                         }
+                       </code>
+                    </div>
+                  </div>
                 </div>
                 <div class="project-info">
-                  <h3>Nombre del Proyecto 1</h3>
-                  <p>Breve descripción del proyecto, tecnologías usadas y el problema que resuelve.</p>
-                  <a href="#" class="link-arrow">Ver detalles &rarr;</a>
+                  <h3>Proyecto 1 (Ejemplo)</h3>
+                  <p>Aplicación desarrollada usando React y Node.js para resolver un problema específico.</p>
+                  <a href="#" class="link-arrow">Ver código fuente &rarr;</a>
                 </div>
               </div>
-              <!-- Project Card 2 -->
-              <div class="project-card">
-                <div class="project-image">
-                  <img src="https://via.placeholder.com/600x400/FFD1DC/333333?text=Proyecto+2" alt="Proyecto 2">
-                </div>
-                <div class="project-info">
-                  <h3>Nombre del Proyecto 2</h3>
-                  <p>Breve descripción del proyecto, tecnologías usadas y el problema que resuelve.</p>
-                  <a href="#" class="link-arrow">Ver detalles &rarr;</a>
-                </div>
-              </div>
-              <!-- Project Card 3 -->
-              <div class="project-card">
-                <div class="project-image">
-                  <img src="https://via.placeholder.com/600x400/B4D4E1/333333?text=Proyecto+3" alt="Proyecto 3">
-                </div>
-                <div class="project-info">
-                  <h3>Nombre del Proyecto 3</h3>
-                  <p>Breve descripción del proyecto, tecnologías usadas y el problema que resuelve.</p>
-                  <a href="#" class="link-arrow">Ver detalles &rarr;</a>
-                </div>
-              </div>
+              
+              <!-- Más proyectos se pueden agregar aquí -->
             </div>
           </div>
         </section>
@@ -133,12 +149,12 @@
       <footer id="contacto" class="footer">
         <div class="container">
           <div class="footer-content">
-            <h2>¿Listo para empezar un proyecto?</h2>
-            <p>Ponte en contacto conmigo para discutir cómo podemos trabajar juntos.</p>
+            <h2>¿Listo para colaborar?</h2>
+            <p>Ponte en contacto conmigo para discutir cómo podemos trabajar juntos o si quieres hablar sobre tecnología.</p>
             <a href="mailto:tu-correo@ejemplo.com" class="btn btn-primary btn-large">Envíame un correo</a>
           </div>
           <div class="footer-bottom">
-            <p>&copy; 2026 Tu Nombre. Todos los derechos reservados.</p>
+            <p>&copy; 2026 Nicolás Londoño Hernández. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>
