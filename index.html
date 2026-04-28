@@ -1,183 +1,325 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Portafolio de Nicolás Londoño - Ciencias de la Computación" />
-    <title>Nicolás Londoño | Ciencias de la Computación</title>
-    <!-- Google Fonts: Inter para texto, JetBrains Mono para toques de código -->
+    <title>Nicolás Londoño | CS Portfolio</title>
+    <!-- Syne: bold geometric display font | Outfit: refined body | JetBrains Mono: code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
   </head>
   <body>
+    <!-- Scroll progress indicator -->
+    <div id="scroll-progress" role="progressbar" aria-label="Scroll progress"></div>
+
+    <!-- Network graph canvas (sits behind everything) -->
+    <canvas id="networkCanvas" aria-hidden="true"></canvas>
+
     <div id="app">
-      <header class="header">
+      <header class="header" id="mainHeader">
         <div class="container">
           <nav class="navbar">
-            <a href="#" class="logo">&lt;Niko /&gt;</a>
-            <ul class="nav-links">
+            <a href="#" class="logo" aria-label="Inicio">&lt;Niko /&gt;</a>
+
+            <ul class="nav-links" id="navLinks" role="list">
               <li><a href="#inicio">_inicio</a></li>
               <li><a href="#sobre-mi">_sobre_mí</a></li>
+              <li><a href="#aptitudes">_aptitudes</a></li>
               <li><a href="#proyectos">_proyectos</a></li>
               <li><a href="#contacto" class="btn btn-outline">.contactar()</a></li>
             </ul>
+
+            <div class="nav-controls">
+              <!-- Dark/Light toggle with binary code aesthetic -->
+              <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
+                <span class="toggle-track">
+                  <span class="toggle-icon sun" aria-hidden="true">☀</span>
+                  <span class="toggle-thumb"></span>
+                  <span class="toggle-icon moon" aria-hidden="true">◑</span>
+                </span>
+              </button>
+              <!-- Mobile hamburger -->
+              <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+              </button>
+            </div>
           </nav>
         </div>
       </header>
 
       <main>
-        <!-- Hero Section -->
+        <!-- ═══════════════════════════════════════ HERO ═══ -->
         <section id="inicio" class="hero">
+
+          <!-- Parallax Layer 1 — Deep background: floating binary streams -->
+          <div class="parallax-layer layer-deep" data-parallax="0.45" aria-hidden="true">
+            <div class="binary-field" id="binaryField"></div>
+          </div>
+
+          <!-- Parallax Layer 2 — Mid: floating CS symbols -->
+          <div class="parallax-layer layer-mid" data-parallax="0.25" aria-hidden="true">
+            <span class="float-sym sym-1">{ }</span>
+            <span class="float-sym sym-2">[ ]</span>
+            <span class="float-sym sym-3">&lt; /&gt;</span>
+            <span class="float-sym sym-4">λ</span>
+            <span class="float-sym sym-5">∑</span>
+            <span class="float-sym sym-6">∞</span>
+            <span class="float-sym sym-7">( )</span>
+            <span class="float-sym sym-8">=&gt;</span>
+          </div>
+
           <div class="container hero-content">
-            <div class="hero-text">
-              <span class="badge">&gt;_ console.log("¡Hola, mundo!");</span>
-              <h1 class="hero-title">Soy <br><strong>Nicolás Londoño</strong> <br> <span class="highlight">Ciencias de la Computación</span></h1>
+            <!-- Text block -->
+            <div class="hero-text" data-reveal="left">
+              <span class="badge" id="typedBadge" aria-label="Terminal output"></span>
+              <h1 class="hero-title">
+                Soy&nbsp;<br>
+                <strong class="name-highlight">Nicolás Londoño</strong><br>
+                <span class="title-tag"><span class="tag-brace">{</span>&nbsp;Ciencias de la Computación&nbsp;<span class="tag-brace">}</span></span>
+              </h1>
               <p class="hero-description">
                 Apasionado por la tecnología, el desarrollo de software y la resolución de problemas complejos. Transformo la lógica en soluciones creativas y funcionales.
               </p>
               <div class="hero-actions">
-                <a href="#proyectos" class="btn btn-primary">Ver mis proyectos</a>
-                <a href="/fotos/Nicolas%20Londo%C3%B1o%20Hernandez%20CV.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Descargar CV</a>
+                <a href="#proyectos" class="btn btn-primary">Ver proyectos</a>
+                <a href="/fotos/Nicolas%20Londo%C3%B1o%20Hernandez%20CV.pdf"
+                   target="_blank" rel="noopener noreferrer"
+                   class="btn btn-ghost">
+                  <span class="btn-dl-icon">↓</span> Descargar CV
+                </a>
               </div>
-              <div class="social-links" style="margin-top: 1.5rem;">
-                <a href="https://www.linkedin.com/in/nicolas-londoño-317336199/" target="_blank" class="link-arrow" style="font-family: var(--font-code); font-size: 0.9rem;">-> LinkedIn</a>
+              <div class="social-row">
+                <a href="https://www.linkedin.com/in/nicolas-londoño-317336199/"
+                   target="_blank" rel="noopener noreferrer"
+                   class="social-link">
+                  <span class="social-arrow">→</span> LinkedIn
+                </a>
               </div>
             </div>
-            <div class="hero-image-wrapper">
-              <!-- Decorative background shape -->
-              <div class="shape-bg"></div>
-              <!-- Profile picture -->
-              <div class="profile-container">
-                <img src="/fotos/foto_niko.JPG" alt="Nicolás Londoño" class="profile-img" />
+
+            <!-- Visual block (slight parallax) -->
+            <div class="hero-visual" data-parallax-el="0.07" data-reveal="right">
+              <!-- Corner-bracket frame around photo -->
+              <div class="profile-frame">
+                <div class="corner tl"></div>
+                <div class="corner tr"></div>
+                <div class="corner bl"></div>
+                <div class="corner br"></div>
+                <img src="/fotos/foto_niko.JPG"
+                     alt="Foto de perfil de Nicolás Londoño"
+                     class="profile-img"
+                     loading="eager" />
+                <div class="profile-status">
+                  <span class="status-pulse"></span>
+                  <span>Available for hire</span>
+                </div>
               </div>
-              <!-- Floating decorative shapes -->
-              <div class="shape floating-shape-1">
-                <span class="code-symbol">{ }</span>
+              <!-- Floating stat cards -->
+              <div class="stat-card sc-left">
+                <span class="stat-num">3+</span>
+                <span class="stat-label">años de estudio</span>
               </div>
-              <div class="shape floating-shape-2">
-                <span class="code-symbol">&lt;/&gt;</span>
+              <div class="stat-card sc-right">
+                <span class="stat-num">∞</span>
+                <span class="stat-label">curiosidad</span>
               </div>
             </div>
           </div>
+
+          <!-- Scroll hint -->
+          <div class="scroll-hint" aria-hidden="true">
+            <span class="sh-text">scroll</span>
+            <div class="sh-line"></div>
+          </div>
         </section>
 
-        <!-- About Section -->
+        <!-- ═════════════════════════════════════ ABOUT ═══ -->
         <section id="sobre-mi" class="about">
           <div class="container">
-            <div class="section-header">
+            <div class="section-header" data-reveal="up">
+              <span class="section-label">// 01. about</span>
               <h2 class="section-title">Sobre <span>mí</span></h2>
-              <p class="section-subtitle">Conoce un poco más sobre mi trayectoria.</p>
             </div>
+
             <div class="about-content">
-              <div class="about-text">
+              <div class="about-text" data-reveal="left">
                 <p>
                   Estudiante de <strong>Ciencias de la Computación</strong> con un gran interés en el desarrollo de software, la algoritmia y la arquitectura de sistemas. Me encanta entender cómo funcionan las cosas por debajo y construir aplicaciones eficientes e intuitivas.
                 </p>
                 <p>
-                  A lo largo de mi carrera, he desarrollado habilidades en diversas tecnologías, siempre buscando aprender las mejores prácticas, optimizar el rendimiento y escribir código limpio y mantenible.
+                  A lo largo de mi carrera he desarrollado habilidades en diversas tecnologías, siempre buscando las mejores prácticas, optimizar el rendimiento y escribir código limpio y mantenible.
                 </p>
+                <!-- Decorative code snippet -->
+                <div class="code-snippet">
+                  <div class="snippet-bar">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                    <span class="snippet-name">profile.js</span>
+                  </div>
+                  <pre class="snippet-body"><code><span class="ck">const</span> <span class="cv">niko</span> = {
+  <span class="cpk">role</span>:   <span class="cs">"CS Student"</span>,
+  <span class="cpk">focus</span>:  [<span class="cs">"Algorithms"</span>, <span class="cs">"Systems"</span>],
+  <span class="cpk">status</span>: <span class="cs">"open_to_work"</span>,
+  <span class="cpk">coffee</span>: <span class="cb">true</span>
+};</code></pre>
+                </div>
               </div>
-              <div class="skills-container">
-                <!-- Habilidades clave -->
-                <span class="skill-tag">JavaScript / TypeScript</span>
-                <span class="skill-tag">React.js</span>
-                <span class="skill-tag">Python</span>
-                <span class="skill-tag">Java / C++</span>
-                <span class="skill-tag">Estructuras de Datos</span>
-                <span class="skill-tag">Algoritmos</span>
-                <span class="skill-tag">Git & GitHub</span>
-                <span class="skill-tag">Bases de Datos</span>
+
+              <div class="skills-block" data-reveal="right">
+                <h3 class="skills-heading">// Stack tecnológico</h3>
+                <div class="skills-wrap">
+                  <span class="skill-tag">JavaScript / TypeScript</span>
+                  <span class="skill-tag">React.js</span>
+                  <span class="skill-tag">Python</span>
+                  <span class="skill-tag">Java / C++</span>
+                  <span class="skill-tag">Estructuras de Datos</span>
+                  <span class="skill-tag">Algoritmos</span>
+                  <span class="skill-tag">Git &amp; GitHub</span>
+                  <span class="skill-tag">Bases de Datos</span>
+                  <span class="skill-tag">SQL / NoSQL</span>
+                  <span class="skill-tag">Linux / Bash</span>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- Aptitudes Section -->
-        <section id="aptitudes" class="projects">
-           <div class="container">
-             <div class="section-header">
-               <h2 class="section-title">Mis <span>Aptitudes</span></h2>
-               <p class="section-subtitle">Habilidades destacadas y validadas.</p>
-             </div>
-             <div class="aptitudes-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
-                <div class="aptitude-card" style="background-color: var(--bg-surface); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow-sm); border: 1px solid rgba(0,0,0,0.05); text-align: center; transition: var(--transition);">
-                  <h3 style="font-family: var(--font-code); font-size: 1.1rem; color: var(--accent-primary); margin-bottom: 0.5rem;">>_ Problem Solving</h3>
-                  <p style="color: var(--text-muted); font-size: 0.9rem;">Resolución eficiente de problemas lógicos y algorítmicos.</p>
-                </div>
-                <div class="aptitude-card" style="background-color: var(--bg-surface); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow-sm); border: 1px solid rgba(0,0,0,0.05); text-align: center; transition: var(--transition);">
-                  <h3 style="font-family: var(--font-code); font-size: 1.1rem; color: var(--accent-primary); margin-bottom: 0.5rem;">>_ Analytical Skills</h3>
-                  <p style="color: var(--text-muted); font-size: 0.9rem;">Pensamiento analítico y alta capacidad de abstracción.</p>
-                </div>
-                <div class="aptitude-card" style="background-color: var(--bg-surface); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow-sm); border: 1px solid rgba(0,0,0,0.05); text-align: center; transition: var(--transition);">
-                  <h3 style="font-family: var(--font-code); font-size: 1.1rem; color: var(--accent-primary); margin-bottom: 0.5rem;">>_ Databases</h3>
-                  <p style="color: var(--text-muted); font-size: 0.9rem;">Modelado, optimización y gestión de bases de datos.</p>
-                </div>
-                <div class="aptitude-card" style="background-color: var(--bg-surface); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow-sm); border: 1px solid rgba(0,0,0,0.05); text-align: center; transition: var(--transition);">
-                  <h3 style="font-family: var(--font-code); font-size: 1.1rem; color: var(--accent-primary); margin-bottom: 0.5rem;">>_ Data Analytics</h3>
-                  <p style="color: var(--text-muted); font-size: 0.9rem;">Análisis e interpretación de información estructurada.</p>
-                </div>
-                <div class="aptitude-card" style="background-color: var(--bg-surface); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow-sm); border: 1px solid rgba(0,0,0,0.05); text-align: center; transition: var(--transition);">
-                  <h3 style="font-family: var(--font-code); font-size: 1.1rem; color: var(--accent-primary); margin-bottom: 0.5rem;">>_ Data Migration</h3>
-                  <p style="color: var(--text-muted); font-size: 0.9rem;">Experiencia en procesos de migración y ETL.</p>
-                </div>
-             </div>
-           </div>
+        <!-- ════════════════════════════════ APTITUDES ═══ -->
+        <section id="aptitudes" class="aptitudes">
+          <div class="container">
+            <div class="section-header" data-reveal="up">
+              <span class="section-label">// 02. skills</span>
+              <h2 class="section-title">Mis <span>Aptitudes</span></h2>
+              <p class="section-subtitle">Habilidades destacadas y validadas.</p>
+            </div>
+
+            <div class="aptitudes-grid">
+              <div class="aptitude-card" data-reveal="up" style="--delay:0s">
+                <div class="apt-icon">⚡</div>
+                <h3>&gt;_ Problem Solving</h3>
+                <p>Resolución eficiente de problemas lógicos y algorítmicos.</p>
+                <div class="apt-bar"><div class="apt-fill" data-width="90"></div></div>
+                <span class="apt-pct">90%</span>
+              </div>
+
+              <div class="aptitude-card" data-reveal="up" style="--delay:0.1s">
+                <div class="apt-icon">🧠</div>
+                <h3>&gt;_ Analytical Skills</h3>
+                <p>Pensamiento analítico y alta capacidad de abstracción.</p>
+                <div class="apt-bar"><div class="apt-fill" data-width="88"></div></div>
+                <span class="apt-pct">88%</span>
+              </div>
+
+              <div class="aptitude-card" data-reveal="up" style="--delay:0.2s">
+                <div class="apt-icon">🗄️</div>
+                <h3>&gt;_ Databases</h3>
+                <p>Modelado, optimización y gestión de bases de datos.</p>
+                <div class="apt-bar"><div class="apt-fill" data-width="82"></div></div>
+                <span class="apt-pct">82%</span>
+              </div>
+
+              <div class="aptitude-card" data-reveal="up" style="--delay:0.3s">
+                <div class="apt-icon">📊</div>
+                <h3>&gt;_ Data Analytics</h3>
+                <p>Análisis e interpretación de información estructurada.</p>
+                <div class="apt-bar"><div class="apt-fill" data-width="78"></div></div>
+                <span class="apt-pct">78%</span>
+              </div>
+
+              <div class="aptitude-card" data-reveal="up" style="--delay:0.4s">
+                <div class="apt-icon">🔄</div>
+                <h3>&gt;_ Data Migration</h3>
+                <p>Experiencia en procesos de migración y ETL.</p>
+                <div class="apt-bar"><div class="apt-fill" data-width="75"></div></div>
+                <span class="apt-pct">75%</span>
+              </div>
+            </div>
+          </div>
         </section>
 
-        <!-- Projects Section Placeholder -->
-        <section id="proyectos" class="projects" style="background-color: var(--bg-surface);">
+        <!-- ══════════════════════════════ PROYECTOS ═══ -->
+        <section id="proyectos" class="projects">
           <div class="container">
-            <div class="section-header">
+            <div class="section-header" data-reveal="up">
+              <span class="section-label">// 03. work</span>
               <h2 class="section-title">Mis <span>Proyectos</span></h2>
               <p class="section-subtitle">Una selección de mi trabajo reciente.</p>
             </div>
-            
+
             <div class="projects-grid">
               <!-- Project Card 1 -->
-              <div class="project-card">
-                <div class="project-image">
-                  <div class="code-window">
-                    <div class="window-header">
-                       <span class="dot red"></span>
-                       <span class="dot yellow"></span>
-                       <span class="dot green"></span>
-                    </div>
-                    <div class="window-body">
-                       <code>
-                         <span style="color:#b58900;">function</span> <span style="color:#268bd2;">buildApp</span>() {<br>
-                         &nbsp;&nbsp;<span style="color:#cb4b16;">return</span> "Solución";<br>
-                         }
-                       </code>
-                    </div>
+              <div class="project-card" data-reveal="up" style="--delay:0s">
+                <div class="project-window">
+                  <div class="window-bar">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                    <span class="window-file">app.js</span>
+                  </div>
+                  <div class="window-code">
+                    <code>
+                      <span class="ck">function</span> <span class="cf">buildApp</span>() {<br>
+                      &nbsp;&nbsp;<span class="cc">// Proyecto en desarrollo</span><br>
+                      &nbsp;&nbsp;<span class="ck">return</span> <span class="cs">"Solución"</span>;<br>
+                      }
+                    </code>
                   </div>
                 </div>
-                <div class="project-info">
+                <div class="project-body">
+                  <div class="project-tags">
+                    <span class="ptag">React</span>
+                    <span class="ptag">Node.js</span>
+                  </div>
                   <h3>Proyecto 1 (Ejemplo)</h3>
-                  <p>Aplicación desarrollada usando React y Node.js para resolver un problema específico.</p>
-                  <a href="#" class="link-arrow">Ver código fuente &rarr;</a>
+                  <p>Aplicación desarrollada usando React y Node.js para resolver un problema específico con enfoque en rendimiento y UX.</p>
+                  <a href="#" class="project-link">
+                    Ver código fuente <span class="link-arrow">→</span>
+                  </a>
                 </div>
               </div>
-              
-              <!-- Más proyectos se pueden agregar aquí -->
+
+              <!-- Placeholder card to encourage adding more projects -->
+              <div class="project-card project-card--ghost" data-reveal="up" style="--delay:0.15s">
+                <div class="ghost-inner">
+                  <span class="ghost-icon">+</span>
+                  <p>Próximo proyecto…</p>
+                  <span class="ghost-hint">// coming_soon</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
       </main>
 
+      <!-- ════════════════════════════════ FOOTER ═══ -->
       <footer id="contacto" class="footer">
         <div class="container">
-          <div class="footer-content">
-            <h2>¿Listo para colaborar?</h2>
-            <p>Ponte en contacto conmigo para discutir cómo podemos trabajar juntos o si quieres hablar sobre tecnología.</p>
-            <a href="mailto:tu-correo@ejemplo.com" class="btn btn-primary btn-large">Envíame un correo</a>
+          <div class="footer-content" data-reveal="up">
+            <span class="section-label">// 04. contact</span>
+            <h2>¿Listo para <span>colaborar</span>?</h2>
+            <p>Ponte en contacto para discutir cómo podemos trabajar juntos o hablar sobre tecnología.</p>
+            <a href="mailto:tu-correo@ejemplo.com" class="btn btn-primary btn-large">
+              Envíame un correo
+            </a>
           </div>
           <div class="footer-bottom">
-            <p>&copy; 2026 Nicolás Londoño Hernández. Todos los derechos reservados.</p>
+            <p class="footer-copy">&copy; 2026 Nicolás Londoño Hernández. Todos los derechos reservados.</p>
+            <div class="footer-built">
+              <span class="built-with">Built with</span>
+              <span class="stack-tag">Vite</span>
+              <span>+</span>
+              <span class="stack-tag">Vanilla JS</span>
+            </div>
           </div>
         </div>
       </footer>
-    </div>
+    </div><!-- /#app -->
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
