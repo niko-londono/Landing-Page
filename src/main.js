@@ -240,56 +240,167 @@ function lerp(a, b, t) { return a + (b - a) * t; }
 })();
 
 /* ══════════════════════════════════════════════════════════
-   6. PARALLAX ENGINE — Multi-layer depth scrolling
-   Two types:
-   a) [data-parallax]    — absolute layers inside hero
-   b) [data-parallax-el] — foreground elements (slower)
+   6. PARALLAX ENGINE — GSAP ScrollTrigger powered
+   Professional multi-layer depth scrolling with scrub
    ══════════════════════════════════════════════════════════ */
 ;(function ParallaxEngine() {
-  const layers     = $$('[data-parallax]');
-  const elements   = $$('[data-parallax-el]');
-
   // Respect prefers-reduced-motion
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduced) return;
 
-  // Disable on small screens for performance
-  let enabled = window.innerWidth > 768;
-  window.addEventListener('resize', () => {
-    enabled = window.innerWidth > 768;
-  }, { passive: true });
-
-  let ticking = false;
-
-  function update() {
-    if (!enabled) return;
-    const scrollY = window.scrollY;
-
-    // Layer parallax (full sections)
-    for (const layer of layers) {
-      const speed  = parseFloat(layer.dataset.parallax) || 0.3;
-      const offset = scrollY * speed;
-      layer.style.transform = `translateY(${offset}px)`;
+  // Wait for GSAP to load (deferred scripts)
+  function init() {
+    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+      setTimeout(init, 100);
+      return;
     }
 
-    // Element parallax (subtle tilt on single elements)
-    for (const el of elements) {
-      const speed  = parseFloat(el.dataset.parallaxEl) || 0.1;
-      const rect   = el.getBoundingClientRect();
-      const center = rect.top + rect.height / 2 - window.innerHeight / 2;
-      const offset = center * speed;
-      el.style.transform = `translateY(${offset.toFixed(2)}px)`;
-    }
+    gsap.registerPlugin(ScrollTrigger);
 
-    ticking = false;
+    // Disable on small screens for performance
+    const mm = gsap.matchMedia();
+
+    mm.add('(min-width: 769px)', () => {
+      // ── Hero parallax layers ──
+      const hero = document.querySelector('.hero');
+      if (!hero) return;
+
+      // Deep background (binary field) — moves fast
+      const layerDeep = hero.querySelector('.layer-deep');
+      if (layerDeep) {
+        gsap.to(layerDeep, {
+          y: () => window.innerHeight * 0.45,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: hero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1,
+          }
+        });
+      }
+
+      // Mid layer (floating symbols) — medium speed
+      const layerMid = hero.querySelector('.layer-mid');
+      if (layerMid) {
+        gsap.to(layerMid, {
+          y: () => window.innerHeight * 0.25,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: hero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1.5,
+          }
+        });
+      }
+
+      // Hero text — moves down subtly
+      const heroText = hero.querySelector('.hero-text');
+      if (heroText) {
+        gsap.to(heroText, {
+          y: 60,
+          opacity: 0.4,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: hero,
+            start: 'top top',
+            end: '80% top',
+            scrub: 1,
+          }
+        });
+      }
+
+      // Hero visual (photo) — slower drift up for depth
+      const heroVisual = hero.querySelector('.hero-visual');
+      if (heroVisual) {
+        gsap.to(heroVisual, {
+          y: -40,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: hero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 2,
+          }
+        });
+      }
+
+      // Stat cards — drift independently
+      const statCards = hero.querySelectorAll('.stat-card');
+      statCards.forEach((card, i) => {
+        gsap.to(card, {
+          y: (30 + i * 20),
+          ease: 'none',
+          scrollTrigger: {
+            trigger: hero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1 + i * 0.5,
+          }
+        });
+      });
+
+      // Scroll hint — fade out quickly
+      const scrollHint = hero.querySelector('.scroll-hint');
+      if (scrollHint) {
+        gsap.to(scrollHint, {
+          y: 40,
+          opacity: 0,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: hero,
+            start: 'top top',
+            end: '20% top',
+            scrub: 0.5,
+          }
+        });
+      }
+
+      // ── Section parallax reveals ──
+      // About section — slight upward shift
+      const aboutSection = document.querySelector('.about');
+      if (aboutSection) {
+        gsap.from(aboutSection.querySelector('.about-text'), {
+          y: 40,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: aboutSection,
+            start: 'top 85%',
+            end: 'top 40%',
+            scrub: 1,
+          }
+        });
+        gsap.from(aboutSection.querySelector('.skills-block'), {
+          y: 60,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: aboutSection,
+            start: 'top 80%',
+            end: 'top 35%',
+            scrub: 1.5,
+          }
+        });
+      }
+
+      // Grid line zoom on hero
+      const heroGrid = hero;
+      if (heroGrid) {
+        gsap.to(heroGrid, {
+          '--grid-opacity': 0,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: hero,
+            start: '60% top',
+            end: 'bottom top',
+            scrub: 1,
+          }
+        });
+      }
+    });
   }
 
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      requestAnimationFrame(update);
-      ticking = true;
-    }
-  }, { passive: true });
+  init();
 })();
 
 /* ══════════════════════════════════════════════════════════

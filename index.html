@@ -10,6 +10,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="/fotos/favicon.png" />
+    <!-- GSAP + ScrollTrigger for professional parallax -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
   </head>
   <body>
     <!-- Scroll progress indicator -->
@@ -249,25 +252,59 @@
               <p class="section-subtitle">Una selección de mi trabajo reciente.</p>
             </div>
 
-            <div class="projects-grid">
-              <!-- Project Card 1 -->
-              <div class="project-card" data-reveal="up" style="--delay:0s">
-                <img src="/fotos/DEP2024.jpeg" alt="MIGRACIÓN CORE BPD 2024" class="project-img" loading="lazy">
-                <div class="project-body">
-                  <h3>MIGRACIÓN CORE BPD</h3>
-                  <p>• Departamento del año 2024<br>VPES. Tecnología y operaciones</p>
+            <!-- Single Project: MIGRACIÓN CORE BPD -->
+            <div class="project-showcase" data-reveal="up">
+              <div class="showcase-header">
+                <div class="showcase-label">
+                  <span class="ptag">Migración</span>
+                  <span class="ptag">Data</span>
+                  <span class="ptag">ETL</span>
                 </div>
+                <h3 class="showcase-title">MIGRACIÓN CORE BPD</h3>
+                <p class="showcase-desc">Proyecto de migración tecnológica reconocido con premios al mejor departamento durante dos años consecutivos.</p>
               </div>
 
-              <!-- Project Card 2 -->
-              <div class="project-card" data-reveal="up" style="--delay:0.15s">
-                <div class="project-img-group">
-                  <img src="/fotos/DEP2025.jpeg" alt="Logro 1 2025" class="project-img" loading="lazy">
-                  <img src="/fotos/DEP2025_2.jpeg" alt="Logro 2 2025" class="project-img" loading="lazy">
+              <div class="achievements-grid">
+                <!-- Achievement 1 -->
+                <div class="achievement-card">
+                  <div class="achievement-img-wrap">
+                    <img src="/fotos/DEP2024.jpeg" alt="Departamento del año 2024" loading="lazy">
+                    <div class="achievement-overlay">
+                      <span class="achievement-year">2024</span>
+                    </div>
+                  </div>
+                  <div class="achievement-info">
+                    <h4>🏆 Departamento del año 2024</h4>
+                    <p>VPES. Tecnología y operaciones</p>
+                  </div>
                 </div>
-                <div class="project-body">
-                  <h3>Logros MIGRACIÓN CORE BPD</h3>
-                  <p>• Departamento del año 2025<br>VPES. Tecnología y Operaciones</p>
+
+                <!-- Achievement 2 -->
+                <div class="achievement-card">
+                  <div class="achievement-img-wrap">
+                    <img src="/fotos/DEP2025.jpeg" alt="Departamento del año 2025" loading="lazy">
+                    <div class="achievement-overlay">
+                      <span class="achievement-year">2025</span>
+                    </div>
+                  </div>
+                  <div class="achievement-info">
+                    <h4>🏆 Departamento del año 2025</h4>
+                    <p>VPES. Tecnología y Operaciones</p>
+                  </div>
+                </div>
+
+                <!-- Achievement 3 -->
+                <div class="achievement-card">
+                  <div class="achievement-img-wrap">
+                    <img src="/fotos/DEP2025_2.jpeg" alt="Reconocimiento equipo 2025" loading="lazy">
+                    <div class="achievement-overlay">
+                      <span class="achievement-year">2025</span>
+                    </div>
+                  </div>
+                  <div class="achievement-info">
+                    <h4>🏆 Reconocimiento del equipo</h4>
+                    <p>VPES. Tecnología y Operaciones</p>
+                  </div>
                 </div>
               </div>
             </div>
