@@ -546,6 +546,28 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   color: var(--accent);
   border-color: var(--accent);
 }
+.linkedin-btn {
+  background: rgba(10, 102, 194, 0.15);
+  border: 1px solid #0a66c2;
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.linkedin-btn:hover {
+  background: #0a66c2;
+  color: #fff;
+  border-color: #0a66c2;
+  box-shadow: 0 4px 15px rgba(10, 102, 194, 0.4);
+}
+[data-theme="light"] .linkedin-btn {
+  color: #0a66c2;
+}
+[data-theme="light"] .linkedin-btn:hover {
+  color: #fff;
+}
 .social-arrow {
   transition: transform 0.3s ease;
 }
@@ -894,6 +916,25 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   box-shadow: var(--shadow-lg), 0 0 0 1px var(--accent);
 }
 
+.project-img {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+  display: block;
+  border-bottom: 1px solid var(--bg-border);
+}
+
+.project-img-group {
+  display: flex;
+  width: 100%;
+}
+.project-img-group .project-img {
+  width: 50%;
+}
+.project-img-group .project-img:first-child {
+  border-right: 1px solid var(--bg-border);
+}
+
 /* Code window in project card */
 .project-window {
   background: #040810;
@@ -1124,6 +1165,7 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   .sc-right { right: 0px; }
   .skills-wrap { justify-content: center; }
   .skills-heading { text-align: center; }
+  .scroll-hint { display: none; }
 }
 
 @media (max-width: 768px) {
