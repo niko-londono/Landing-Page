@@ -1120,8 +1120,8 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
     gap: 3rem;
     text-align: center;
   }
-  .hero-text { order: 2; }
-  .hero-visual { order: 1; margin-bottom: 1rem; }
+  .hero-text-wrapper { order: 2; }
+  .hero-visual-wrapper { order: 1; margin-bottom: 1rem; }
   .hero-actions, .social-row { justify-content: center; }
   .hero-description { max-width: 100%; margin-inline: auto; }
   .profile-frame { max-width: 300px; margin-inline: auto; }

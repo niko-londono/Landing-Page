@@ -296,7 +296,7 @@ function lerp(a, b, t) { return a + (b - a) * t; }
       }
 
       // Hero text — moves down subtly
-      const heroText = hero.querySelector('.hero-text');
+      const heroText = hero.querySelector('.hero-text-wrapper');
       if (heroText) {
         gsap.to(heroText, {
           y: 60,
@@ -312,7 +312,7 @@ function lerp(a, b, t) { return a + (b - a) * t; }
       }
 
       // Hero visual (photo) — slower drift up for depth
-      const heroVisual = hero.querySelector('.hero-visual');
+      const heroVisual = hero.querySelector('.hero-visual-wrapper');
       if (heroVisual) {
         gsap.to(heroVisual, {
           y: -40,
