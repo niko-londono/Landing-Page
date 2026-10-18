@@ -3,8 +3,9 @@ import './style.css';
 /* ══════════════════════════════════════════════════════════
    NIKO CS PORTFOLIO — main.js
    Modules: ThemeToggle · ScrollProgress · NetworkCanvas ·
-            ParallaxEngine · RevealObserver · TypedBadge ·
-            AptitudeBars · MobileMenu · HeaderScroll
+            BinaryField · TypedBadge · SplitName · ParallaxEngine ·
+            RevealObserver · AptitudeBars · HeaderScroll · MobileMenu ·
+            SmoothScroll · MagneticCards · CursorGlow
    ══════════════════════════════════════════════════════════ */
 
 /* ── Utils ────────────────────────────────────────────────── */
@@ -32,9 +33,7 @@ function lerp(a, b, t) { return a + (b - a) * t; }
     const next = current === 'dark' ? 'light' : 'dark';
     html.setAttribute('data-theme', next);
     localStorage.setItem('niko-theme', next);
-
-    // Re-draw canvas with new theme colours
-    if (typeof window._networkDraw === 'function') window._networkDraw();
+    // NetworkCanvas reads the theme every frame — no redraw call needed
   });
 })();
 
@@ -149,9 +148,6 @@ function lerp(a, b, t) { return a + (b - a) * t; }
     requestAnimationFrame(draw);
   }
 
-  // Expose re-draw for theme toggle
-  window._networkDraw = draw;
-
   window.addEventListener('resize', () => { resize(); createNodes(); }, { passive: true });
   window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
   window.addEventListener('touchmove', e => {
@@ -240,171 +236,292 @@ function lerp(a, b, t) { return a + (b - a) * t; }
 })();
 
 /* ══════════════════════════════════════════════════════════
-   6. PARALLAX ENGINE — GSAP ScrollTrigger powered
-   Professional multi-layer depth scrolling with scrub
+   6. SPLIT NAME — wraps the hero name in word/char spans
+   Screen readers keep the plain text via aria-label.
+   ══════════════════════════════════════════════════════════ */
+;(function SplitName() {
+  const el = $('[data-split]');
+  if (!el) return;
+
+  const text = el.textContent.trim();
+  el.setAttribute('aria-label', text);
+  el.textContent = '';
+
+  text.split(/\s+/).forEach((word, i, words) => {
+    const w = document.createElement('span');
+    w.className = 'word' + (i === words.length - 1 ? ' word--accent' : '');
+    w.setAttribute('aria-hidden', 'true');
+    for (const ch of word) {
+      const c = document.createElement('span');
+      c.className = 'char';
+      c.textContent = ch;
+      w.appendChild(c);
+    }
+    el.appendChild(w);
+    if (i < words.length - 1) el.appendChild(document.createTextNode(' '));
+  });
+})();
+
+/* ══════════════════════════════════════════════════════════
+   7. PARALLAX ENGINE — layered depth, GSAP ScrollTrigger
+   · Entrance: name letters rise out of a mask, photo wipes in
+   · Hero is pinned while the scene pulls apart in depth:
+     grid zooms in, binary field recedes, symbols fly past the
+     camera, the name scatters letter by letter and the photo
+     crops into a viewfinder that the corner brackets track
+   · Pointer parallax: each layer answers the mouse by depth
+   · Sections: giant outlined numbers and award photos drift
+     at their own speed
+   Each effect owns separate properties (entrance vs scroll vs
+   mouse) so tweens on the same element never fight.
    ══════════════════════════════════════════════════════════ */
 ;(function ParallaxEngine() {
-  // Respect prefers-reduced-motion
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduced) return;
 
-  // Wait for GSAP to load (deferred scripts)
+  // GSAP is loaded with `defer` before this module; retry briefly just in case
   function init() {
     if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
       setTimeout(init, 100);
       return;
     }
-
     gsap.registerPlugin(ScrollTrigger);
 
-    // Disable on small screens for performance
+    const hero = $('.hero');
+    if (!hero) return;
+
+    const EASE_OUT = 'expo.out';
+    const chars    = $$('.name-highlight .char', hero);
+    const words    = $$('.name-highlight .word', hero);
+    const media    = $('.profile-media', hero);
+    const img      = $('.profile-img', hero);
+    const frame    = $('.profile-frame', hero);
+    const corners  = $$('.corner', hero);
+    const stats    = $$('.stat-card', hero);
+    const status   = $('.profile-status', hero);
+
+    /* ── Entrance (runs once on load, all sizes) ─────────── */
+    words.forEach(w => w.classList.add('is-masked'));
+    // The scroll scene is built only once the entrance has settled, so the
+    // scrubbed tweens record final (not mid-entrance) values.
+    const intro = gsap.timeline({
+      defaults: { ease: EASE_OUT },
+      onComplete: () => {
+        words.forEach(w => w.classList.remove('is-masked'));
+        buildScene();
+      },
+    });
+    intro
+      .from(chars, { yPercent: 115, duration: 1.1, stagger: 0.028 }, 0.15)
+      .fromTo(media,
+        { clipPath: 'inset(100% 0% 0% 0%)', scale: 1.12 },
+        { clipPath: 'inset(0% 0% 0% 0%)', scale: 1, duration: 1.4, ease: 'expo.inOut' }, 0.1)
+      .fromTo(corners, { scale: 0 }, { scale: 1, duration: 0.7, stagger: 0.06 }, 1.0)
+      .fromTo(stats,
+        { clipPath: 'inset(0% 0% 100% 0% round 12px)' },
+        { clipPath: 'inset(0% 0% 0% 0% round 12px)', duration: 0.9, stagger: 0.12 }, 1.1);
+
     const mm = gsap.matchMedia();
 
-    mm.add('(min-width: 769px)', () => {
-      // ── Hero parallax layers ──
-      const hero = document.querySelector('.hero');
-      if (!hero) return;
+    /* ── Pinned depth scene (desktop) ────────────────────── */
+    function buildScene() {
+      mm.add('(min-width: 993px)', () => {
+        const syms = $$('.float-sym', hero);
+        const textBits = $$('.badge, .hero-greet, .title-tag, .hero-description, .hero-actions, .social-row', hero);
 
-      // Deep background (binary field) — moves fast
-      const layerDeep = hero.querySelector('.layer-deep');
-      if (layerDeep) {
-        gsap.to(layerDeep, {
-          y: () => window.innerHeight * 0.45,
-          ease: 'none',
+        // Viewfinder crop (as fractions of the frame) — corners follow these edges
+        const CROP = { top: 0.08, right: 0.13, bottom: 0.18, left: 0.13 };
+
+        const tl = gsap.timeline({
+          defaults: { ease: 'none' },
           scrollTrigger: {
             trigger: hero,
             start: 'top top',
-            end: 'bottom top',
-            scrub: 1,
-          }
+            end: '+=90%',
+            pin: true,
+            scrub: 0.8,
+            invalidateOnRefresh: true,
+            refreshPriority: 1, // created late but sits above every other trigger
+          },
         });
-      }
 
-      // Mid layer (floating symbols) — medium speed
-      const layerMid = hero.querySelector('.layer-mid');
-      if (layerMid) {
-        gsap.to(layerMid, {
-          y: () => window.innerHeight * 0.25,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: hero,
-            start: 'top top',
-            end: 'bottom top',
-            scrub: 1.5,
-          }
-        });
-      }
-
-      // Hero text — moves down subtly
-      const heroText = hero.querySelector('.hero-text-wrapper');
-      if (heroText) {
-        gsap.to(heroText, {
-          y: 60,
-          opacity: 0.4,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: hero,
-            start: 'top top',
-            end: '80% top',
-            scrub: 1,
-          }
-        });
-      }
-
-      // Hero visual (photo) — slower drift up for depth
-      const heroVisual = hero.querySelector('.hero-visual-wrapper');
-      if (heroVisual) {
-        gsap.to(heroVisual, {
-          y: -40,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: hero,
-            start: 'top top',
-            end: 'bottom top',
-            scrub: 2,
-          }
-        });
-      }
-
-      // Stat cards — drift independently
-      const statCards = hero.querySelectorAll('.stat-card');
-      statCards.forEach((card, i) => {
-        gsap.to(card, {
-          y: (30 + i * 20),
-          ease: 'none',
-          scrollTrigger: {
-            trigger: hero,
-            start: 'top top',
-            end: 'bottom top',
-            scrub: 1 + i * 0.5,
-          }
-        });
+        tl
+          // Depth 0 — grid rushes toward the viewer and dissolves
+          .to('.hero-grid', { scale: 1.9, opacity: 0, ease: 'power1.in', duration: 1 }, 0)
+          // Depth 1 — binary field recedes
+          .to('.layer-deep', { scale: 0.8, opacity: 0.3, duration: 1 }, 0)
+          // Depth 2 — symbols burst outward past the camera
+          .to(syms, {
+            x: (i, el) => (el.offsetLeft + el.offsetWidth / 2 - hero.offsetWidth / 2) * 0.9,
+            y: (i, el) => (el.offsetTop + el.offsetHeight / 2 - hero.offsetHeight / 2) * 0.9,
+            scale: 2.6,
+            rotation: (i) => (i % 2 ? 1 : -1) * (14 + i * 4),
+            opacity: 0,
+            ease: 'power2.in',
+            duration: 1,
+          }, 0)
+          .to('.scroll-hint', { y: 30, opacity: 0, duration: 0.12 }, 0)
+          // Name comes apart letter by letter
+          .fromTo(chars,
+            { x: 0, y: 0, rotation: 0, opacity: 1 },
+            {
+              x: () => gsap.utils.random(-60, 60),
+              y: () => gsap.utils.random(-180, -60),
+              rotation: () => gsap.utils.random(-35, 35),
+              opacity: 0,
+              ease: 'power2.in',
+              duration: 0.45,
+              stagger: { each: 0.018, from: 'random' },
+            }, 0.12)
+          // Supporting copy lifts away with a soft focus pull
+          .fromTo(textBits,
+            { y: 0, opacity: 1, filter: 'blur(0px)' },
+            { y: -70, opacity: 0, filter: 'blur(6px)', ease: 'power2.in', duration: 0.4, stagger: 0.05 }, 0.2)
+          // Photo turns away into depth…
+          .to('.hero-visual-wrapper', {
+            // glides to the centre of the stage as the copy clears out
+            // offset* ignore transforms, so re-measuring mid-scroll stays correct
+            x: () => {
+              const w = $('.hero-visual-wrapper', hero);
+              const centre = w.offsetParent.offsetLeft + w.offsetLeft + w.offsetWidth / 2;
+              return (hero.offsetWidth / 2 - centre) * 0.6;
+            },
+            y: -40,
+            rotationY: -16,
+            scale: 0.88,
+            transformOrigin: '50% 50%',
+            ease: 'power1.inOut',
+            duration: 1,
+          }, 0)
+          // …while its crop tightens into a viewfinder and the image pushes in
+          .to(img, {
+            clipPath: `inset(${CROP.top * 100}% ${CROP.right * 100}% ${CROP.bottom * 100}% ${CROP.left * 100}% round 20px)`,
+            scale: 1.16,
+            ease: 'power1.inOut',
+            duration: 0.8,
+          }, 0.1)
+          .to(corners, {
+            x: (i, el) => {
+              const w = frame.offsetWidth;
+              return el.classList.contains('tl') || el.classList.contains('bl') ? w * CROP.left : -w * CROP.right;
+            },
+            y: (i, el) => {
+              const h = frame.offsetHeight;
+              return el.classList.contains('tl') || el.classList.contains('tr') ? h * CROP.top : -h * CROP.bottom;
+            },
+            ease: 'power1.inOut',
+            duration: 0.8,
+          }, 0.1)
+          .to(status, { y: () => -frame.offsetHeight * CROP.bottom, ease: 'power1.inOut', duration: 0.8 }, 0.1)
+          // Stat cards fly toward the camera, each at its own depth
+          .to(stats, {
+            x: (i) => (i ? 1 : -1) * 140,
+            scale: (i) => 1.5 + i * 0.25,
+            opacity: 0,
+            ease: 'power2.in',
+            duration: 0.6,
+            stagger: 0.08,
+          }, 0.05);
       });
+      ScrollTrigger.refresh();
+    }
 
-      // Scroll hint — fade out quickly
-      const scrollHint = hero.querySelector('.scroll-hint');
-      if (scrollHint) {
-        gsap.to(scrollHint, {
-          y: 40,
-          opacity: 0,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: hero,
-            start: 'top top',
-            end: '20% top',
-            scrub: 0.5,
+    /* ── Pointer parallax (fine pointers only) ───────────── */
+    mm.add('(min-width: 993px) and (hover: hover) and (pointer: fine)', () => {
+      // [element, xDepth(px), yDepth(px), extra]
+      const layers = [
+        [$('#binaryField', hero), -14, -10],
+        [$('.layer-mid', hero),    32,  22],
+        [frame,                    10,   8, { rot: 7 }],
+        ...stats.map((s, i) => [s, 26 + i * 12, 18 + i * 8]),
+      ].filter(([el]) => el);
+
+      if (frame) gsap.set(frame, { transformPerspective: 900 });
+
+      const movers = layers.map(([el, dx, dy, extra]) => ({
+        dx, dy, extra,
+        // xPercent/yPercent channel keeps the mouse separate from scroll x/y
+        x: gsap.quickTo(el, extra ? 'x' : 'xPercent', { duration: 0.9, ease: 'power3' }),
+        y: gsap.quickTo(el, extra ? 'y' : 'yPercent', { duration: 0.9, ease: 'power3' }),
+        rx: extra && gsap.quickTo(el, 'rotationX', { duration: 0.9, ease: 'power3' }),
+        ry: extra && gsap.quickTo(el, 'rotationY', { duration: 0.9, ease: 'power3' }),
+        el,
+      }));
+
+      function move(nx, ny) {
+        for (const m of movers) {
+          if (m.extra) {
+            m.x(nx * m.dx); m.y(ny * m.dy);
+            m.rx(-ny * m.extra.rot); m.ry(nx * m.extra.rot);
+          } else {
+            // convert px depth into a percentage of the element's own size
+            m.x((nx * m.dx) / m.el.offsetWidth * 100);
+            m.y((ny * m.dy) / m.el.offsetHeight * 100);
           }
-        });
+        }
       }
 
-      // ── Section parallax reveals ──
-      // About section — slight upward shift
-      const aboutSection = document.querySelector('.about');
-      if (aboutSection) {
-        gsap.from(aboutSection.querySelector('.about-text'), {
-          y: 40,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: aboutSection,
-            start: 'top 85%',
-            end: 'top 40%',
-            scrub: 1,
-          }
-        });
-        gsap.from(aboutSection.querySelector('.skills-block'), {
-          y: 60,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: aboutSection,
-            start: 'top 80%',
-            end: 'top 35%',
-            scrub: 1.5,
-          }
-        });
-      }
+      const onMove = (e) => {
+        const r = hero.getBoundingClientRect();
+        if (r.bottom < 0) return;
+        move((e.clientX / window.innerWidth) * 2 - 1, ((e.clientY - r.top) / r.height) * 2 - 1);
+      };
+      const onLeave = () => move(0, 0);
 
-      // Grid line zoom on hero
-      const heroGrid = hero;
-      if (heroGrid) {
-        gsap.to(heroGrid, {
-          '--grid-opacity': 0,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: hero,
-            start: '60% top',
-            end: 'bottom top',
-            scrub: 1,
-          }
-        });
-      }
+      hero.addEventListener('mousemove', onMove, { passive: true });
+      hero.addEventListener('mouseleave', onLeave);
+      return () => {
+        hero.removeEventListener('mousemove', onMove);
+        hero.removeEventListener('mouseleave', onLeave);
+        move(0, 0);
+      };
     });
+
+    /* ── Section depth (all sizes) ───────────────────────── */
+    $$('.section-index').forEach(el => {
+      gsap.fromTo(el, { yPercent: 45 }, {
+        yPercent: -45,
+        ease: 'none',
+        scrollTrigger: {
+          // relative to its own heading: centred when the heading is centred
+          trigger: el.parentElement,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: true,
+        },
+      });
+    });
+
+    // Award photos slide inside their frames
+    $$('.achievement-img-wrap').forEach(wrap => {
+      gsap.fromTo($('.achievement-parallax', wrap), { yPercent: -7 }, {
+        yPercent: 7,
+        ease: 'none',
+        scrollTrigger: { trigger: wrap, start: 'top bottom', end: 'bottom top', scrub: true },
+      });
+    });
+
+    // Code window floats a layer above the About copy
+    mm.add('(min-width: 769px)', () => {
+      const snippet = $('.code-snippet');
+      if (!snippet) return;
+      gsap.fromTo(snippet, { y: 50 }, {
+        y: -30,
+        ease: 'none',
+        scrollTrigger: { trigger: '.about', start: 'top bottom', end: 'bottom top', scrub: true },
+      });
+    });
+
+    // Fonts and images change layout after first paint; re-measure triggers
+    window.addEventListener('load', () => ScrollTrigger.refresh());
+    if (document.fonts) document.fonts.ready.then(() => ScrollTrigger.refresh());
   }
 
   init();
 })();
 
 /* ══════════════════════════════════════════════════════════
-   7. REVEAL ON SCROLL — IntersectionObserver
+   8. REVEAL ON SCROLL — IntersectionObserver
    ══════════════════════════════════════════════════════════ */
 ;(function RevealObserver() {
   const targets = $$('[data-reveal]');
@@ -430,7 +547,7 @@ function lerp(a, b, t) { return a + (b - a) * t; }
 })();
 
 /* ══════════════════════════════════════════════════════════
-   8. APTITUDE BARS — Animate progress fills
+   9. APTITUDE BARS — Animate progress fills
    ══════════════════════════════════════════════════════════ */
 function triggerBars(bars) {
   bars.forEach(bar => {
@@ -456,7 +573,7 @@ function triggerBars(bars) {
 })();
 
 /* ══════════════════════════════════════════════════════════
-   9. HEADER SCROLL EFFECT
+   10. HEADER SCROLL EFFECT
    ══════════════════════════════════════════════════════════ */
 ;(function HeaderScroll() {
   const header = $('#mainHeader');
@@ -476,7 +593,7 @@ function triggerBars(bars) {
 })();
 
 /* ══════════════════════════════════════════════════════════
-   10. MOBILE MENU
+   11. MOBILE MENU
    ══════════════════════════════════════════════════════════ */
 ;(function MobileMenu() {
   const toggle = $('#menuToggle');
@@ -517,7 +634,7 @@ function triggerBars(bars) {
 })();
 
 /* ══════════════════════════════════════════════════════════
-   11. SMOOTH SCROLL — nav anchor links
+   12. SMOOTH SCROLL — nav anchor links
    ══════════════════════════════════════════════════════════ */
 ;(function SmoothScroll() {
   $$('a[href^="#"]').forEach(a => {
@@ -534,14 +651,14 @@ function triggerBars(bars) {
 })();
 
 /* ══════════════════════════════════════════════════════════
-   12. CARD MAGNETIC HOVER EFFECT
+   13. CARD MAGNETIC HOVER EFFECT
    Subtle 3D tilt on project and aptitude cards
    ══════════════════════════════════════════════════════════ */
 ;(function MagneticCards() {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduced) return;
 
-  const cards = $$('.project-card:not(.project-card--ghost), .aptitude-card');
+  const cards = $$('.aptitude-card');
 
   cards.forEach(card => {
     card.addEventListener('mousemove', (e) => {
@@ -562,7 +679,7 @@ function triggerBars(bars) {
 })();
 
 /* ══════════════════════════════════════════════════════════
-   13. CURSOR GLOW (desktop only)
+   14. CURSOR GLOW (desktop only)
    Soft radial gradient that follows the cursor on the hero
    ══════════════════════════════════════════════════════════ */
 ;(function CursorGlow() {
@@ -576,18 +693,26 @@ function triggerBars(bars) {
     border-radius:50%;
     background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%);
     pointer-events:none;
-    transform:translate(-50%,-50%);
-    top:50%;left:50%;
+    top:0;left:0;
+    margin:-250px 0 0 -250px;
     z-index:1;
-    transition:top 0.1s ease,left 0.1s ease;
-    will-change:top,left;
+    will-change:transform;
   `;
   hero.appendChild(glow);
 
+  // Transform-only follow (no layout); GSAP smooths it when available
+  let setX = (v) => { glow.style.transform = `translate(${v}px, ${glow._y || 0}px)`; glow._x = v; };
+  let setY = (v) => { glow.style.transform = `translate(${glow._x || 0}px, ${v}px)`; glow._y = v; };
+  if (typeof gsap !== 'undefined') {
+    setX = gsap.quickTo(glow, 'x', { duration: 0.6, ease: 'power3' });
+    setY = gsap.quickTo(glow, 'y', { duration: 0.6, ease: 'power3' });
+  }
+  setX(hero.offsetWidth / 2); setY(hero.offsetHeight / 2);
+
   hero.addEventListener('mousemove', (e) => {
     const rect = hero.getBoundingClientRect();
-    glow.style.left = (e.clientX - rect.left) + 'px';
-    glow.style.top  = (e.clientY - rect.top)  + 'px';
+    setX(e.clientX - rect.left);
+    setY(e.clientY - rect.top);
   }, { passive: true });
 })();
 

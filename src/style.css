@@ -330,7 +330,33 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
 .section-header {
   text-align: center;
   margin-bottom: 4rem;
+  position: relative;
+  isolation: isolate;
 }
+
+/* Giant outlined section number — drifts at its own speed behind the heading */
+.section-index {
+  /* centred without transforms: GSAP owns this element's transform */
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  margin-top: -0.5em;
+  text-align: center;
+  z-index: -1;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(7rem, 22vw, 17rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--accent) 38%, transparent);
+  pointer-events: none;
+  user-select: none;
+  will-change: transform;
+}
+[data-theme="light"] .section-index { -webkit-text-stroke-color: color-mix(in srgb, var(--accent) 22%, transparent); }
+.footer-content { position: relative; isolation: isolate; }
 
 .section-title {
   font-family: var(--font-display);
@@ -411,9 +437,11 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
 .sym-7 { top:18%; left:65%; animation-duration:6.8s; animation-delay:-1s; }
 .sym-8 { top:60%; left:75%; animation-duration:6s;   animation-delay:-2.5s; }
 
+/* Idle float uses the individual `translate` property so it composes with
+   the GSAP-driven `transform` (scroll depth + mouse parallax) on the same element. */
 @keyframes floatY {
-  0%,100% { transform: translateY(0); }
-  50%      { transform: translateY(-22px); }
+  0%,100% { translate: 0 0; }
+  50%      { translate: 0 -22px; }
 }
 
 /* ── 12. HERO ────────────────────────────────────────────── */
@@ -426,11 +454,10 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   overflow: hidden;
 }
 
-/* subtle radial grid */
-.hero::before {
-  content: '';
+/* Perspective grid — its own element so GSAP can scale it toward the viewer */
+.hero-grid {
   position: absolute;
-  inset: 0;
+  inset: -10%;
   background-image:
     linear-gradient(var(--text-faint) 1px, transparent 1px),
     linear-gradient(90deg, var(--text-faint) 1px, transparent 1px);
@@ -439,10 +466,10 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   opacity: 0.4;
   pointer-events: none;
   z-index: 1;
-  mask-image: radial-gradient(ellipse 70% 80% at 50% 40%, black, transparent);
-  -webkit-mask-image: radial-gradient(ellipse 70% 80% at 50% 40%, black, transparent);
+  mask-image: radial-gradient(ellipse 60% 70% at 50% 45%, black, transparent);
+  -webkit-mask-image: radial-gradient(ellipse 60% 70% at 50% 45%, black, transparent);
 }
-[data-theme="light"] .hero::before { opacity: 0.25; }
+[data-theme="light"] .hero-grid { opacity: 0.25; }
 
 .hero-content {
   display: grid;
@@ -451,7 +478,10 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   align-items: center;
   position: relative;
   z-index: 3;
+  perspective: 1400px;
 }
+
+.hero-visual-wrapper { transform-style: preserve-3d; }
 
 /* Terminal badge with cursor */
 .badge {
@@ -487,12 +517,27 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   margin-bottom: 1.4rem;
 }
 
+.hero-greet { display: inline-block; }
+
 .name-highlight {
-  background: linear-gradient(135deg, var(--text-main), var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-main);
   display: block;
+}
+
+/* Split name (built by SplitName in main.js): each word masks its letters
+   for the entrance; letters scatter independently on scroll. */
+.name-highlight .word {
+  display: inline-block;
+  white-space: nowrap;
+  /* room for accents (á, ñ) inside the mask */
+  padding: 0.14em 0.04em 0.1em;
+  margin: -0.14em -0.04em -0.1em;
+}
+.name-highlight .word.is-masked { overflow: hidden; }
+.name-highlight .word--accent { color: var(--accent); }
+.name-highlight .char {
+  display: inline-block;
+  will-change: transform;
 }
 
 .title-tag {
@@ -588,12 +633,18 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   max-width: 370px;
 }
 
+/* Media wrapper carries the entrance wipe; the img itself carries the
+   scroll "viewfinder" crop, so the two clip-paths never fight. */
+.profile-media {
+  border-radius: var(--radius-md);
+  clip-path: inset(0% 0% 0% 0%);
+}
 .profile-frame img {
   width: 100%;
   aspect-ratio: 3/4;
   object-fit: cover;
-  border-radius: var(--radius-md);
   display: block;
+  clip-path: inset(0% 0% 0% 0% round 12px);
   filter: saturate(0.85);
   transition: filter 0.4s ease;
 }
@@ -606,7 +657,8 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   border-color: var(--accent);
   border-style: solid;
   z-index: 4;
-  transition: var(--transition);
+  /* size only — GSAP owns the transform (entrance + viewfinder tracking) */
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .corner.tl { top:-10px; left:-10px; border-width: 2px 0 0 2px; }
 .corner.tr { top:-10px; right:-10px; border-width: 2px 2px 0 0; }
@@ -619,9 +671,13 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
 .profile-status {
   position: absolute;
   bottom: -14px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: inline-flex;
+  /* centred without transforms: GSAP owns this element's transform */
+  left: 0;
+  right: 0;
+  width: max-content;
+  margin-inline: auto;
+  z-index: 4;
+  display: flex;
   align-items: center;
   gap: 0.5rem;
   background: var(--bg-card);
@@ -689,7 +745,8 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   align-items: center;
   gap: 0.5rem;
   z-index: 3;
-  animation: fadeInUp 1s ease 1.5s both;
+  /* `backwards` (not `both`) so the scroll scene can fade it out afterwards */
+  animation: fadeInUp 1s ease 1.5s backwards;
 }
 .sh-text {
   font-family: var(--font-code);
@@ -963,12 +1020,22 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   overflow: hidden;
   aspect-ratio: 4/3;
 }
+/* The parallax layer is 20% taller than its frame so GSAP can slide it
+   inside (inner parallax); the img keeps its own transform for the hover zoom. */
+.achievement-parallax {
+  position: absolute;
+  left: 0;
+  top: -10%;
+  width: 100%;
+  height: 120%;
+  will-change: transform;
+}
 .achievement-img-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.5s ease;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .achievement-card:hover .achievement-img-wrap img {
   transform: scale(1.05);
@@ -1095,7 +1162,7 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
 [data-reveal] {
   opacity: 0;
   will-change: transform, opacity;
-  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: opacity 0.8s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
   transition-delay: var(--delay, 0s);
 }
 [data-reveal="up"]    { transform: translateY(40px); }
@@ -1175,10 +1242,12 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   .btn { width: 100%; justify-content: center; }
 }
 
-/* Reduced motion — accessibility */
+/* Reduced motion — accessibility: no spatial movement, keep gentle fades */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+  *, *::before, *::after { animation: none !important; }
   html { scroll-behavior: auto; }
-  .parallax-layer { transform: none !important; }
-  .hero-visual { transform: none !important; }
+  .parallax-layer, .hero-visual, .section-index { transform: none !important; }
+  [data-reveal] { transform: none !important; transition: opacity 0.4s ease !important; }
+  .aptitude-card:hover, .achievement-card:hover, .skill-tag:hover,
+  .btn-primary:hover, .btn-ghost:hover { transform: none; }
 }
