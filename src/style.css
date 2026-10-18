@@ -316,7 +316,36 @@ button { border:none; background:none; cursor:pointer; }
 .btn-large { padding: 0.95rem 2.4rem; font-size: 1.05rem; }
 
 /* ── 10. SECTION COMMON ──────────────────────────────────── */
-section { padding: 7rem 0; position: relative; z-index: 2; }
+/* Each section is its own chapter; overflow-x clip keeps drifting layers
+   from creating horizontal scroll without breaking the hero pin. */
+section { padding: clamp(6rem, 11vw, 10rem) 0; position: relative; z-index: 2; overflow-x: clip; }
+
+/* Back layer per section: faint CS glyphs drifting at their own depth */
+.section-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.layer-sym {
+  position: absolute;
+  font-family: var(--font-code);
+  font-weight: 700;
+  font-size: clamp(2.2rem, 6vw, 5.5rem);
+  line-height: 1;
+  color: var(--accent);
+  opacity: 0.07;
+  user-select: none;
+  white-space: nowrap;
+  will-change: transform;
+}
+[data-theme="light"] .layer-sym { opacity: 0.08; }
+.layer-sym.ls-a { top: 12%; left: 4%; }
+.layer-sym.ls-b { top: 30%; right: 5%; font-size: clamp(1.6rem, 4vw, 3.4rem); }
+.layer-sym.ls-c { bottom: 14%; left: 12%; font-size: clamp(3rem, 9vw, 8rem); opacity: 0.05; }
+.layer-sym.ls-d { bottom: 26%; right: 16%; font-size: clamp(1.3rem, 3vw, 2.4rem); }
+section > .container, .footer > .container { position: relative; z-index: 1; }
 
 .section-label {
   display: block;
@@ -890,6 +919,10 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   gap: 1.5rem;
 }
 
+/* Depth wrapper: GSAP moves it, the card inside keeps its reveal + tilt */
+.apt-depth { display: flex; will-change: transform; }
+.apt-depth > .aptitude-card { flex: 1; }
+
 .aptitude-card {
   background: var(--bg-card);
   border: 1px solid var(--bg-border);
@@ -996,9 +1029,10 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   max-width: 650px;
 }
 
+/* Two awards: 2024 (single photo) + 2025 (group shot with a floating close-up) */
 .achievements-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 2fr 3fr;
   gap: 1.5rem;
 }
 
@@ -1007,10 +1041,10 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   border: 1px solid var(--bg-border);
   border-radius: var(--radius-md);
   overflow: hidden;
-  transition: var(--transition);
+  transition: border-color 0.35s ease, box-shadow 0.35s ease, translate 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .achievement-card:hover {
-  transform: translateY(-6px);
+  translate: 0 -6px;
   border-color: var(--accent);
   box-shadow: 0 12px 40px var(--accent-glow);
 }
@@ -1018,10 +1052,27 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
 .achievement-img-wrap {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 4/3;
+  height: clamp(260px, 30vw, 380px);
+  isolation: isolate;
 }
-/* The parallax layer is 20% taller than its frame so GSAP can slide it
-   inside (inner parallax); the img keeps its own transform for the hover zoom. */
+
+/* Whole photo is the click target for the lightbox */
+.achievement-media {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+.achievement-media:focus-visible,
+.achievement-inset:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: -4px;
+}
+
+/* The parallax layer is 20% taller than its frame so GSAP can slide and
+   zoom it inside (inner parallax); the img keeps its own transform for hover. */
 .achievement-parallax {
   position: absolute;
   left: 0;
@@ -1035,19 +1086,42 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.achievement-card:hover .achievement-img-wrap img {
-  transform: scale(1.05);
-}
+.achievement-media:hover img { transform: scale(1.05); }
 
-.achievement-overlay {
+/* Close-up photo floating above the group shot — its own depth layer.
+   The button is moved by GSAP; the inner frame carries the tilt and border. */
+.achievement-inset {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 2;
+  right: 1.1rem;
+  bottom: 1.1rem;
+  z-index: 3;
+  width: clamp(92px, 24%, 150px);
+  aspect-ratio: 716 / 1280;
+  cursor: zoom-in;
+  will-change: transform;
 }
+.inset-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, #e8edf5 85%, transparent);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+  rotate: 3deg;
+  transition: rotate 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+}
+.achievement-inset:hover .inset-frame { rotate: 0deg; border-color: var(--accent-2); }
+.achievement-inset img { object-position: 50% 30%; }
+
 .achievement-year {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  z-index: 4;
+  pointer-events: none;
   background: rgba(0,0,0,0.6);
   backdrop-filter: blur(6px);
   color: var(--accent-2);
@@ -1058,16 +1132,43 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   border-radius: var(--radius-sm);
   border: 1px solid rgba(100,255,218,0.25);
 }
+.achievement-count {
+  position: absolute;
+  left: 0.9rem;
+  bottom: 0.9rem;
+  z-index: 4;
+  pointer-events: none;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  color: #e8edf5;
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
 
 .achievement-info {
   padding: 1.2rem 1.4rem;
 }
 .achievement-info h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-main);
   margin-bottom: 0.3rem;
+}
+.trophy {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: var(--accent-2);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .achievement-info p {
   font-family: var(--font-code);
@@ -1082,11 +1183,6 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   }
   .project-showcase {
     padding: 1.5rem;
-  }
-}
-@media (min-width: 769px) and (max-width: 992px) {
-  .achievements-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -1157,6 +1253,9 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   border-radius: 4px;
   color: var(--text-muted);
 }
+
+/* Scrubbed word reveal (About lead paragraph) */
+[data-scrub] .scrub-word { display: inline; }
 
 /* ── 17. REVEAL ANIMATIONS ───────────────────────────────── */
 [data-reveal] {
@@ -1250,4 +1349,100 @@ section { padding: 7rem 0; position: relative; z-index: 2; }
   [data-reveal] { transform: none !important; transition: opacity 0.4s ease !important; }
   .aptitude-card:hover, .achievement-card:hover, .skill-tag:hover,
   .btn-primary:hover, .btn-ghost:hover { transform: none; }
+}
+
+/* ── 19. LIGHTBOX ────────────────────────────────────────── */
+.lightbox {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: clamp(1rem, 4vw, 3rem);
+  border: none;
+  background: transparent;
+  color: #e8edf5;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease, overlay 0.3s allow-discrete, display 0.3s allow-discrete;
+}
+.lightbox:not([open]) { display: none; }
+.lightbox[open] { opacity: 1; }
+@starting-style { .lightbox[open] { opacity: 0; } }
+.lightbox::backdrop {
+  background: rgba(4, 8, 14, 0.9);
+  backdrop-filter: blur(10px);
+}
+
+.lb-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  max-width: min(1100px, 100%);
+  max-height: 100%;
+}
+.lb-img {
+  max-width: 100%;
+  max-height: calc(100dvh - 9rem);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  transform-origin: center;
+}
+.lb-img:not([src]) { display: none; }
+.lb-caption {
+  font-family: var(--font-code);
+  font-size: 0.82rem;
+  color: #9fb0cc;
+  text-align: center;
+}
+.lb-counter {
+  position: fixed;
+  top: 1.4rem;
+  left: 1.6rem;
+  font-family: var(--font-code);
+  font-size: 0.8rem;
+  color: #9fb0cc;
+}
+
+.lb-btn {
+  position: fixed;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: #e8edf5;
+  transition: background 0.2s ease, border-color 0.2s ease, scale 0.2s ease;
+}
+.lb-btn:hover { background: rgba(255,255,255,0.16); border-color: var(--accent-2); }
+.lb-btn:active { scale: 0.94; }
+.lb-btn:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 3px; }
+.lb-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lb-close { top: 1rem; right: 1rem; }
+.lb-prev { left: 1rem; top: 50%; translate: 0 -50%; }
+.lb-next { right: 1rem; top: 50%; translate: 0 -50%; }
+.lightbox.is-single .lb-prev,
+.lightbox.is-single .lb-next,
+.lightbox.is-single .lb-counter { display: none; }
+
+@media (max-width: 768px) {
+  .lb-prev, .lb-next { top: auto; bottom: 1rem; translate: none; }
+  .lb-prev { left: calc(50% - 56px); }
+  .lb-next { right: calc(50% - 56px); }
+  .lb-img { max-height: calc(100dvh - 11rem); }
 }

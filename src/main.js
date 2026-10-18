@@ -5,7 +5,8 @@ import './style.css';
    Modules: ThemeToggle · ScrollProgress · NetworkCanvas ·
             BinaryField · TypedBadge · SplitName · ParallaxEngine ·
             RevealObserver · AptitudeBars · HeaderScroll · MobileMenu ·
-            SmoothScroll · MagneticCards · CursorGlow
+            SmoothScroll · MagneticCards · CursorGlow ·
+            Lightbox
    ══════════════════════════════════════════════════════════ */
 
 /* ── Utils ────────────────────────────────────────────────── */
@@ -262,6 +263,29 @@ function lerp(a, b, t) { return a + (b - a) * t; }
   });
 })();
 
+/* Wraps every word of an element's text nodes in .scrub-word spans,
+   keeping inline markup (e.g. <strong>) intact. Returns the spans. */
+function splitWords(root) {
+  const out = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const node of nodes) {
+    const frag = document.createDocumentFragment();
+    node.textContent.split(/(\s+)/).forEach(part => {
+      if (!part) return;
+      if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+      const span = document.createElement('span');
+      span.className = 'scrub-word';
+      span.textContent = part;
+      frag.appendChild(span);
+      out.push(span);
+    });
+    node.replaceWith(frag);
+  }
+  return out;
+}
+
 /* ══════════════════════════════════════════════════════════
    7. PARALLAX ENGINE — layered depth, GSAP ScrollTrigger
    · Entrance: name letters rise out of a mask, photo wipes in
@@ -492,24 +516,60 @@ function lerp(a, b, t) { return a + (b - a) * t; }
       });
     });
 
-    // Award photos slide inside their frames
-    $$('.achievement-img-wrap').forEach(wrap => {
-      gsap.fromTo($('.achievement-parallax', wrap), { yPercent: -7 }, {
-        yPercent: 7,
+    /* ── Layered depth in every section ──────────────────── */
+    // [data-depth] = how far an element travels while its section crosses the
+    // viewport. Positive drifts up faster (closer), negative lags (farther).
+    // Only wrappers / elements with no CSS transform get this attribute.
+    $$('[data-depth]').forEach(el => {
+      const depth = parseFloat(el.dataset.depth) || 0;
+      const travel = () => depth * window.innerHeight * (window.innerWidth < 769 ? 0.12 : 0.28);
+      gsap.fromTo(el, { y: () => travel() }, {
+        y: () => -travel(),
         ease: 'none',
-        scrollTrigger: { trigger: wrap, start: 'top bottom', end: 'bottom top', scrub: true },
+        scrollTrigger: {
+          trigger: el.closest('section, footer') || el,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: true,
+          invalidateOnRefresh: true,
+        },
       });
     });
 
-    // Code window floats a layer above the About copy
-    mm.add('(min-width: 769px)', () => {
-      const snippet = $('.code-snippet');
-      if (!snippet) return;
-      gsap.fromTo(snippet, { y: 50 }, {
-        y: -30,
+    // Lead paragraph lights up word by word as it is read
+    $$('[data-scrub]').forEach(p => {
+      const words = splitWords(p);
+      gsap.fromTo(words, { opacity: 0.15 }, {
+        opacity: 1,
         ease: 'none',
-        scrollTrigger: { trigger: '.about', start: 'top bottom', end: 'bottom top', scrub: true },
+        stagger: 0.08,
+        scrollTrigger: { trigger: p, start: 'top 85%', end: 'bottom 50%', scrub: true },
       });
+    });
+
+    // Award photos: zoom out and slide inside their frames on the way in,
+    // dim on the way out; the floating close-up rides a closer layer.
+    $$('.achievement-img-wrap').forEach(wrap => {
+      const layer = $('.achievement-parallax', wrap);
+      gsap.fromTo(layer, { yPercent: -7, scale: 1.18 }, {
+        yPercent: 7,
+        scale: 1,
+        ease: 'none',
+        scrollTrigger: { trigger: wrap, start: 'top bottom', end: 'bottom top', scrub: true },
+      });
+      gsap.fromTo(layer, { filter: 'brightness(1)' }, {
+        filter: 'brightness(0.45)',
+        ease: 'none',
+        scrollTrigger: { trigger: wrap, start: 'center 35%', end: 'bottom top', scrub: true },
+      });
+      const inset = $('.achievement-inset', wrap);
+      if (inset) {
+        gsap.fromTo(inset, { y: 60 }, {
+          y: -40,
+          ease: 'none',
+          scrollTrigger: { trigger: wrap, start: 'top bottom', end: 'bottom top', scrub: true },
+        });
+      }
     });
 
     // Fonts and images change layout after first paint; re-measure triggers
@@ -714,6 +774,107 @@ function triggerBars(bars) {
     setX(e.clientX - rect.left);
     setY(e.clientY - rect.top);
   }, { passive: true });
+})();
+
+/* ══════════════════════════════════════════════════════════
+   15. LIGHTBOX — click any [data-gallery] photo to view it large
+   Native <dialog>: Esc closes, focus is trapped and restored.
+   Photos sharing a data-gallery value form one set (arrows,
+   keyboard ← →, swipe). The image grows out of its thumbnail.
+   ══════════════════════════════════════════════════════════ */
+;(function Lightbox() {
+  const dialog = $('#lightbox');
+  const triggers = $$('[data-gallery]');
+  if (!dialog || !triggers.length || typeof dialog.showModal !== 'function') return;
+
+  const img     = $('.lb-img', dialog);
+  const caption = $('.lb-caption', dialog);
+  const counter = $('.lb-counter', dialog);
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  // gallery name -> [{ src, alt, el }] ordered by data-index
+  const galleries = {};
+  triggers.forEach(btn => {
+    const thumb = $('img', btn);
+    (galleries[btn.dataset.gallery] ||= []).push({
+      src: thumb.currentSrc || thumb.src,
+      alt: thumb.alt,
+      el: thumb,
+      index: Number(btn.dataset.index) || 0,
+    });
+  });
+  Object.values(galleries).forEach(list => list.sort((a, b) => a.index - b.index));
+
+  let set = [];
+  let pos = 0;
+
+  function show(i, fromEl) {
+    pos = (i + set.length) % set.length;
+    const item = set[pos];
+    img.src = item.src;
+    img.alt = item.alt;
+    caption.textContent = item.alt;
+    counter.textContent = `${pos + 1} / ${set.length}`;
+    dialog.classList.toggle('is-single', set.length < 2);
+
+    if (reduced.matches || !img.animate) return;
+    const run = () => {
+      if (fromEl) {
+        // FLIP: start at the thumbnail's box, settle into place
+        const a = fromEl.getBoundingClientRect();
+        const b = img.getBoundingClientRect();
+        if (!b.width) return;
+        const dx = a.left + a.width / 2 - (b.left + b.width / 2);
+        const dy = a.top + a.height / 2 - (b.top + b.height / 2);
+        const s  = Math.max(a.width / b.width, 0.15);
+        img.animate(
+          [{ transform: `translate(${dx}px, ${dy}px) scale(${s})`, opacity: 0.6 },
+           { transform: 'none', opacity: 1 }],
+          { duration: 520, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
+      } else {
+        img.animate(
+          [{ opacity: 0, transform: 'scale(0.97)' }, { opacity: 1, transform: 'none' }],
+          { duration: 260, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
+      }
+    };
+    img.complete && img.naturalWidth ? run() : img.addEventListener('load', run, { once: true });
+  }
+
+  function open(btn) {
+    set = galleries[btn.dataset.gallery];
+    const start = set.findIndex(it => btn.contains(it.el));
+    dialog.showModal();
+    document.documentElement.style.overflow = 'hidden';
+    show(Math.max(start, 0), $('img', btn));
+  }
+
+  triggers.forEach(btn => btn.addEventListener('click', () => open(btn)));
+
+  $('.lb-close', dialog).addEventListener('click', () => dialog.close());
+  $('.lb-prev', dialog).addEventListener('click', () => show(pos - 1));
+  $('.lb-next', dialog).addEventListener('click', () => show(pos + 1));
+
+  // Click on the dark area (the dialog itself, not its content) closes
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+  dialog.addEventListener('close', () => {
+    document.documentElement.style.overflow = '';
+    img.removeAttribute('src');
+  });
+  dialog.addEventListener('keydown', (e) => {
+    if (set.length < 2) return;
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); show(pos - 1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); show(pos + 1); }
+  });
+
+  // Swipe between photos on touch screens
+  let touchX = null;
+  dialog.addEventListener('touchstart', (e) => { touchX = e.touches[0].clientX; }, { passive: true });
+  dialog.addEventListener('touchend', (e) => {
+    if (touchX === null || set.length < 2) return;
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 50) show(pos + (dx < 0 ? 1 : -1));
+    touchX = null;
+  });
 })();
 
 console.log('%c> Portafolio de Nicolás Londoño — v2.0 inicializado 🚀', 'color:#4ea8de;font-family:monospace;font-size:13px;');
