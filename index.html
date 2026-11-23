@@ -18,8 +18,8 @@
     <!-- Scroll progress indicator -->
     <div id="scroll-progress" role="progressbar" aria-label="Scroll progress"></div>
 
-    <!-- Network graph canvas (sits behind everything) -->
-    <canvas id="networkCanvas" aria-hidden="true"></canvas>
+    <!-- WebGL stage (Three.js): text tunnel + morphing data cloud, fixed behind everything -->
+    <canvas id="webgl" aria-hidden="true"></canvas>
 
     <div id="app">
       <header class="header" id="mainHeader">
@@ -58,26 +58,6 @@
       <main>
         <!-- ═══════════════════════════════════════ HERO ═══ -->
         <section id="inicio" class="hero">
-
-          <!-- Depth 0 — perspective grid floor (zooms toward the viewer on scroll) -->
-          <div class="hero-grid" aria-hidden="true"></div>
-
-          <!-- Depth 1 — far background: binary streams -->
-          <div class="parallax-layer layer-deep" aria-hidden="true">
-            <div class="binary-field" id="binaryField"></div>
-          </div>
-
-          <!-- Depth 2 — mid: CS symbols that fly past the camera on scroll -->
-          <div class="parallax-layer layer-mid" aria-hidden="true">
-            <span class="float-sym sym-1">{ }</span>
-            <span class="float-sym sym-2">[ ]</span>
-            <span class="float-sym sym-3">&lt; /&gt;</span>
-            <span class="float-sym sym-4">λ</span>
-            <span class="float-sym sym-5">∑</span>
-            <span class="float-sym sym-6">∞</span>
-            <span class="float-sym sym-7">( )</span>
-            <span class="float-sym sym-8">=&gt;</span>
-          </div>
 
           <div class="container hero-content">
             <!-- Text block -->
@@ -368,7 +348,9 @@
               <span class="built-with">Built with</span>
               <span class="stack-tag">Vite</span>
               <span>+</span>
-              <span class="stack-tag">Vanilla JS</span>
+              <span class="stack-tag">Three.js</span>
+              <span>+</span>
+              <span class="stack-tag">GSAP</span>
             </div>
           </div>
         </div>

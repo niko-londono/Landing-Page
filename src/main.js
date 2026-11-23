@@ -1,19 +1,30 @@
 import './style.css';
+import Lenis from 'lenis';
 
 /* ══════════════════════════════════════════════════════════
    NIKO CS PORTFOLIO — main.js
-   Modules: ThemeToggle · ScrollProgress · NetworkCanvas ·
-            BinaryField · TypedBadge · SplitName · ParallaxEngine ·
+   Modules: ThemeToggle · ScrollProgress · Stage (Lenis + WebGL) ·
+            TypedBadge · SplitName · ParallaxEngine ·
             RevealObserver · AptitudeBars · HeaderScroll · MobileMenu ·
-            SmoothScroll · MagneticCards · CursorGlow ·
-            Lightbox
+            SmoothScroll · MagneticCards · Lightbox
    ══════════════════════════════════════════════════════════ */
 
 /* ── Utils ────────────────────────────────────────────────── */
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 
-function lerp(a, b, t) { return a + (b - a) * t; }
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Shared between the scroll engine and the WebGL world
+const stage = { lenis: null, velocity: 0, remeasure: null };
+
+// GSAP is loaded from the CDN with `defer`; resolve once both globals exist
+const gsapReady = new Promise(resolve => {
+  (function check() {
+    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') resolve();
+    else setTimeout(check, 50);
+  })();
+});
 
 /* ══════════════════════════════════════════════════════════
    1. THEME TOGGLE — Dark / Light Mode
@@ -34,7 +45,7 @@ function lerp(a, b, t) { return a + (b - a) * t; }
     const next = current === 'dark' ? 'light' : 'dark';
     html.setAttribute('data-theme', next);
     localStorage.setItem('niko-theme', next);
-    // NetworkCanvas reads the theme every frame — no redraw call needed
+    // the WebGL world watches data-theme itself (MutationObserver)
   });
 })();
 
@@ -52,141 +63,35 @@ function lerp(a, b, t) { return a + (b - a) * t; }
 })();
 
 /* ══════════════════════════════════════════════════════════
-   3. NETWORK / GRAPH CANVAS (background)
-   Interactive neural-network nodes with mouse repulsion
+   3. STAGE — Lenis smooth scroll driven by GSAP's ticker, and
+   the Three.js world (lazy-loaded so the page paints first).
    ══════════════════════════════════════════════════════════ */
-;(function NetworkCanvas() {
-  const canvas = $('#networkCanvas');
+;(function Stage() {
+  gsapReady.then(() => {
+    gsap.registerPlugin(ScrollTrigger);
+    if (!REDUCED) {
+      const lenis = new Lenis({ duration: 1.15, easing: t => 1 - Math.pow(1 - t, 4), wheelMultiplier: 0.9 });
+      stage.lenis = lenis;
+      lenis.on('scroll', (e) => { stage.velocity = e.velocity; ScrollTrigger.update(); });
+      gsap.ticker.add((t) => lenis.raf(t * 1000));
+      gsap.ticker.lagSmoothing(0);
+    }
+  });
+
+  const canvas = $('#webgl');
   if (!canvas) return;
-  const ctx = canvas.getContext('2d');
+  const hasGL = (() => {
+    try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); }
+    catch { return false; }
+  })();
+  const dropCanvas = () => canvas.parentNode && canvas.parentNode.removeChild(canvas);
+  if (!hasGL) { dropCanvas(); return; }
 
-  let W, H, nodes = [], mouse = { x: -9999, y: -9999 };
-  const NODE_COUNT = 55;
-  const MAX_DIST   = 145;
-  const SPEED      = 0.35;
-
-  function getThemeColors() {
-    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-    return {
-      node: isDark ? 'rgba(78,168,222,' : 'rgba(30,107,191,',
-      line: isDark ? 'rgba(78,168,222,' : 'rgba(30,107,191,',
-    };
-  }
-
-  function resize() {
-    W = canvas.width  = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
-
-  function createNodes() {
-    nodes = Array.from({ length: NODE_COUNT }, () => ({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      vx: (Math.random() - 0.5) * SPEED,
-      vy: (Math.random() - 0.5) * SPEED,
-      r: Math.random() * 2.5 + 1,
-    }));
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-    const c = getThemeColors();
-
-    // Update positions
-    for (const n of nodes) {
-      // Mouse repulsion
-      const dx = n.x - mouse.x;
-      const dy = n.y - mouse.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist < 120) {
-        const force = (120 - dist) / 120 * 0.8;
-        n.vx += (dx / dist) * force;
-        n.vy += (dy / dist) * force;
-      }
-
-      // Damping
-      n.vx *= 0.98;
-      n.vy *= 0.98;
-
-      // Speed cap
-      const sp = Math.hypot(n.vx, n.vy);
-      if (sp > SPEED * 3) { n.vx = n.vx / sp * SPEED * 3; n.vy = n.vy / sp * SPEED * 3; }
-
-      n.x += n.vx;
-      n.y += n.vy;
-
-      // Wrap edges
-      if (n.x < 0) n.x = W;
-      if (n.x > W) n.x = 0;
-      if (n.y < 0) n.y = H;
-      if (n.y > H) n.y = 0;
-
-      // Draw node
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      ctx.fillStyle = c.node + '0.7)';
-      ctx.fill();
-    }
-
-    // Draw connections
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const dx = nodes[i].x - nodes[j].x;
-        const dy = nodes[i].y - nodes[j].y;
-        const d  = Math.hypot(dx, dy);
-        if (d < MAX_DIST) {
-          const alpha = (1 - d / MAX_DIST) * 0.5;
-          ctx.beginPath();
-          ctx.moveTo(nodes[i].x, nodes[i].y);
-          ctx.lineTo(nodes[j].x, nodes[j].y);
-          ctx.strokeStyle = c.line + alpha + ')';
-          ctx.lineWidth = 0.8;
-          ctx.stroke();
-        }
-      }
-    }
-
-    requestAnimationFrame(draw);
-  }
-
-  window.addEventListener('resize', () => { resize(); createNodes(); }, { passive: true });
-  window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
-  window.addEventListener('touchmove', e => {
-    mouse.x = e.touches[0].clientX;
-    mouse.y = e.touches[0].clientY;
-  }, { passive: true });
-
-  resize();
-  createNodes();
-  draw();
-})();
-
-/* ══════════════════════════════════════════════════════════
-   4. BINARY FIELD — Random 0/1 text in Hero background
-   ══════════════════════════════════════════════════════════ */
-;(function BinaryField() {
-  const field = $('#binaryField');
-  if (!field) return;
-
-  // Fill with random binary text
-  const CHARS = 800;
-  let str = '';
-  for (let i = 0; i < CHARS; i++) {
-    str += (Math.random() > 0.5 ? '1' : '0') + ' ';
-    if (i % 60 === 59) str += '\n';
-  }
-  field.textContent = str;
-
-  // Randomly flip some bits periodically
-  let text = str.split('');
-  setInterval(() => {
-    for (let i = 0; i < 15; i++) {
-      const idx = Math.floor(Math.random() * text.length);
-      if (text[idx] === '0') text[idx] = '1';
-      else if (text[idx] === '1') text[idx] = '0';
-    }
-    field.textContent = text.join('');
-  }, 300);
+  // ScrollTrigger must exist first so the world can listen to its refreshes
+  gsapReady
+    .then(() => import('./world/World.js'))
+    .then(({ createWorld }) => createWorld({ canvas, state: stage, reduced: REDUCED }))
+    .catch(err => { console.warn('WebGL world disabled:', err); dropCanvas(); });
 })();
 
 /* ══════════════════════════════════════════════════════════
@@ -300,15 +205,9 @@ function splitWords(root) {
    mouse) so tweens on the same element never fight.
    ══════════════════════════════════════════════════════════ */
 ;(function ParallaxEngine() {
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduced) return;
+  if (REDUCED) return;
 
-  // GSAP is loaded with `defer` before this module; retry briefly just in case
   function init() {
-    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
-      setTimeout(init, 100);
-      return;
-    }
     gsap.registerPlugin(ScrollTrigger);
 
     const hero = $('.hero');
@@ -350,7 +249,6 @@ function splitWords(root) {
     /* ── Pinned depth scene (desktop) ────────────────────── */
     function buildScene() {
       mm.add('(min-width: 993px)', () => {
-        const syms = $$('.float-sym', hero);
         const textBits = $$('.badge, .hero-greet, .title-tag, .hero-description, .hero-actions, .social-row', hero);
 
         // Viewfinder crop (as fractions of the frame) — corners follow these edges
@@ -361,7 +259,7 @@ function splitWords(root) {
           scrollTrigger: {
             trigger: hero,
             start: 'top top',
-            end: '+=90%',
+            end: '+=170%',
             pin: true,
             scrub: 0.8,
             invalidateOnRefresh: true,
@@ -370,20 +268,8 @@ function splitWords(root) {
         });
 
         tl
-          // Depth 0 — grid rushes toward the viewer and dissolves
-          .to('.hero-grid', { scale: 1.9, opacity: 0, ease: 'power1.in', duration: 1 }, 0)
-          // Depth 1 — binary field recedes
-          .to('.layer-deep', { scale: 0.8, opacity: 0.3, duration: 1 }, 0)
-          // Depth 2 — symbols burst outward past the camera
-          .to(syms, {
-            x: (i, el) => (el.offsetLeft + el.offsetWidth / 2 - hero.offsetWidth / 2) * 0.9,
-            y: (i, el) => (el.offsetTop + el.offsetHeight / 2 - hero.offsetHeight / 2) * 0.9,
-            scale: 2.6,
-            rotation: (i) => (i % 2 ? 1 : -1) * (14 + i * 4),
-            opacity: 0,
-            ease: 'power2.in',
-            duration: 1,
-          }, 0)
+          // The WebGL camera dives through the text tunnel over this pin;
+          // the DOM layer clears out of its way.
           .to('.scroll-hint', { y: 30, opacity: 0, duration: 0.12 }, 0)
           // Name comes apart letter by letter
           .fromTo(chars,
@@ -445,7 +331,17 @@ function splitWords(root) {
             ease: 'power2.in',
             duration: 0.6,
             stagger: 0.08,
-          }, 0.05);
+          }, 0.05)
+          // Second half of the pin: the photo — now the eye of the vortex —
+          // rushes past the lens and the camera dives in behind it
+          .to('.hero-visual-wrapper', {
+            scale: 2.4,
+            opacity: 0,
+            filter: 'blur(14px)',
+            ease: 'power2.in',
+            duration: 0.55,
+          }, 1.0)
+          .to({}, { duration: 0.45 }); // let the dive breathe before unpinning
       });
       ScrollTrigger.refresh();
     }
@@ -454,8 +350,6 @@ function splitWords(root) {
     mm.add('(min-width: 993px) and (hover: hover) and (pointer: fine)', () => {
       // [element, xDepth(px), yDepth(px), extra]
       const layers = [
-        [$('#binaryField', hero), -14, -10],
-        [$('.layer-mid', hero),    32,  22],
         [frame,                    10,   8, { rot: 7 }],
         ...stats.map((s, i) => [s, 26 + i * 12, 18 + i * 8]),
       ].filter(([el]) => el);
@@ -577,7 +471,7 @@ function splitWords(root) {
     if (document.fonts) document.fonts.ready.then(() => ScrollTrigger.refresh());
   }
 
-  init();
+  gsapReady.then(init);
 })();
 
 /* ══════════════════════════════════════════════════════════
@@ -668,6 +562,7 @@ function triggerBars(bars) {
     links.classList.toggle('open', isOpen);
     toggle.setAttribute('aria-expanded', String(isOpen));
     document.body.style.overflow = isOpen ? 'hidden' : '';
+    isOpen ? stage.lenis?.stop() : stage.lenis?.start();
   });
 
   // Close on link click
@@ -678,6 +573,7 @@ function triggerBars(bars) {
       links.classList.remove('open');
       toggle.setAttribute('aria-expanded', 'false');
       document.body.style.overflow = '';
+      stage.lenis?.start();
     }
   });
 
@@ -689,6 +585,7 @@ function triggerBars(bars) {
       links.classList.remove('open');
       toggle.setAttribute('aria-expanded', 'false');
       document.body.style.overflow = '';
+      stage.lenis?.start();
     }
   });
 })();
@@ -704,8 +601,9 @@ function triggerBars(bars) {
       const target = document.querySelector(href);
       if (!target) return;
       e.preventDefault();
+      if (stage.lenis) { stage.lenis.scrollTo(target, { offset: -80, duration: 1.6 }); return; }
       const offset = target.getBoundingClientRect().top + window.scrollY - 80;
-      window.scrollTo({ top: offset, behavior: 'smooth' });
+      window.scrollTo({ top: offset, behavior: REDUCED ? 'auto' : 'smooth' });
     });
   });
 })();
@@ -715,8 +613,7 @@ function triggerBars(bars) {
    Subtle 3D tilt on project and aptitude cards
    ══════════════════════════════════════════════════════════ */
 ;(function MagneticCards() {
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduced) return;
+  if (REDUCED) return;
 
   const cards = $$('.aptitude-card');
 
@@ -736,44 +633,6 @@ function triggerBars(bars) {
       card.style.transform = '';
     });
   });
-})();
-
-/* ══════════════════════════════════════════════════════════
-   14. CURSOR GLOW (desktop only)
-   Soft radial gradient that follows the cursor on the hero
-   ══════════════════════════════════════════════════════════ */
-;(function CursorGlow() {
-  const hero = $('.hero');
-  if (!hero || window.innerWidth < 1024) return;
-
-  const glow = document.createElement('div');
-  glow.style.cssText = `
-    position:absolute;
-    width:500px;height:500px;
-    border-radius:50%;
-    background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%);
-    pointer-events:none;
-    top:0;left:0;
-    margin:-250px 0 0 -250px;
-    z-index:1;
-    will-change:transform;
-  `;
-  hero.appendChild(glow);
-
-  // Transform-only follow (no layout); GSAP smooths it when available
-  let setX = (v) => { glow.style.transform = `translate(${v}px, ${glow._y || 0}px)`; glow._x = v; };
-  let setY = (v) => { glow.style.transform = `translate(${glow._x || 0}px, ${v}px)`; glow._y = v; };
-  if (typeof gsap !== 'undefined') {
-    setX = gsap.quickTo(glow, 'x', { duration: 0.6, ease: 'power3' });
-    setY = gsap.quickTo(glow, 'y', { duration: 0.6, ease: 'power3' });
-  }
-  setX(hero.offsetWidth / 2); setY(hero.offsetHeight / 2);
-
-  hero.addEventListener('mousemove', (e) => {
-    const rect = hero.getBoundingClientRect();
-    setX(e.clientX - rect.left);
-    setY(e.clientY - rect.top);
-  }, { passive: true });
 })();
 
 /* ══════════════════════════════════════════════════════════
@@ -845,6 +704,7 @@ function triggerBars(bars) {
     const start = set.findIndex(it => btn.contains(it.el));
     dialog.showModal();
     document.documentElement.style.overflow = 'hidden';
+    stage.lenis?.stop();
     show(Math.max(start, 0), $('img', btn));
   }
 
@@ -858,6 +718,7 @@ function triggerBars(bars) {
   dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
   dialog.addEventListener('close', () => {
     document.documentElement.style.overflow = '';
+    stage.lenis?.start();
     img.removeAttribute('src');
   });
   dialog.addEventListener('keydown', (e) => {
