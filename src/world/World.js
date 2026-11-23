@@ -34,7 +34,7 @@ export async function createWorld({ canvas, state, reduced }) {
   if (document.fonts?.load) {
     await Promise.race([
       Promise.all([
-        document.fonts.load('800 96px Syne'),
+        document.fonts.load('700 96px "Space Grotesk"'),
         document.fonts.load('700 80px "JetBrains Mono"'),
         document.fonts.load('500 80px "JetBrains Mono"'),
       ]),

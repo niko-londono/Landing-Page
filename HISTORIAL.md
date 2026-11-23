@@ -10,7 +10,7 @@ Portafolio personal de una sola página (SPA estática) de **Nicolás Londoño H
 - **Vite 5** (devDependency) + **JavaScript vanilla** (ES modules) + CSS puro. Sin framework, sin tests, sin linter.
 - Dependencias npm: **three 0.170** (escena WebGL, chunk aparte cargado con `import()` tras el primer pintado) y **lenis 1.1** (scroll suave).
 - **GSAP 3.12.5 + ScrollTrigger** cargados por CDN (jsdelivr, `defer`) en `index.html`; en `main.js` se accede a los globales `gsap`/`ScrollTrigger` (reintenta cada 100 ms hasta que cargan).
-- Fuentes Google: Syne (display), Outfit (body), JetBrains Mono (code).
+- Fuentes Google: Space Grotesk (display), Outfit (body), JetBrains Mono (code).
 - Scripts: `npm run dev` · `npm run build` (→ `dist/`) · `npm run preview`.
 - `vite.config.js`: `base: './'` y `chunkSizeWarningLimit: 650` (el chunk de three pesa ~510 KB / 130 KB gzip).
 

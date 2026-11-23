@@ -10,13 +10,13 @@ import * as THREE from 'three';
    ══════════════════════════════════════════════════════════ */
 
 const LINES = [
-  { text: 'NICOLÁS LONDOÑO  ✦  CIENCIAS DE LA COMPUTACIÓN  ✦  ', font: '800 96px Syne', accent: true },
+  { text: 'NICOLÁS LONDOÑO  ✦  CIENCIAS DE LA COMPUTACIÓN  ✦  ', font: '700 96px "Space Grotesk"', accent: true },
   { text: '01001110 01001001 01001011 01001111  ', font: '500 80px "JetBrains Mono"' },
   { text: 'SELECT * FROM talento WHERE curiosidad = ∞;  ', font: '700 80px "JetBrains Mono"' },
   { text: 'ETL → MIGRACIÓN CORE BPD → DEPARTAMENTO DEL AÑO 2024 · 2025  ', font: '700 80px "JetBrains Mono"', accent: true },
   { text: 'λx → f(g(x))   O(n log n)   { }   [ ]   =>   ∑   ', font: '500 80px "JetBrains Mono"' },
   { text: 'SQL SERVER · ORACLE · SAS · POWER BI · LINUX · GIT · ', font: '700 80px "JetBrains Mono"' },
-  { text: 'PROBLEM SOLVING  ·  ANALYTICAL SKILLS  ·  DATA MIGRATION  ·  ', font: '800 80px Syne' },
+  { text: 'PROBLEM SOLVING  ·  ANALYTICAL SKILLS  ·  DATA MIGRATION  ·  ', font: '700 80px "Space Grotesk"' },
   { text: 'git commit -m "construir algo que funcione"  ', font: '400 80px "JetBrains Mono"' },
 ];
 
